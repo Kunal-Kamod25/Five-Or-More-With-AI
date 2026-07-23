@@ -1,0 +1,23 @@
+name: gomoku-ai
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - numpy
+  - pandas
+  - matplotlib
+  - jupyter
+  - pip
+  - pip:
+      - torch
+      - torchvision
+      - torchaudio
+
+# To create this environment:
+#   conda env create -f environment.yml
+# To update after adding a new package:
+#   conda env export --no-builds > environment.yml
+# Always activate before working:
+#   conda activate gomoku-ai

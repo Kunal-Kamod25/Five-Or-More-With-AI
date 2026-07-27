@@ -28,7 +28,7 @@
 
 ## Phase 4 — Gomoku Game
 - [x] Study Gomoku rules
-- [ ] Design game architecture
+- [x] Design game architecture
 - [ ] Develop game engine
 - [ ] Implement game logic
 - [ ] Test game

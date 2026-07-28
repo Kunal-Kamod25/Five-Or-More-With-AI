@@ -6,6 +6,7 @@
 - [x] Create project structure
 - [x] Assign team roles
 - [ ] Define project scope
+- [x] Created project synopsis
 
 ---
 

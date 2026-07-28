@@ -4,8 +4,9 @@
 - [x] Finalize project idea
 - [x] Create GitHub repository
 - [x] Create project structure
-- [ ] Assign team roles
+- [x] Assign team roles
 - [ ] Define project scope
+- [x] Created project synopsis
 
 ---
 
@@ -18,7 +19,7 @@
 ---
 
 ## Phase 3 — Dataset
-- [ ] Find suitable Gomoku dataset
+- [x] Find suitable Gomoku dataset
 - [ ] Download dataset
 - [ ] Study dataset structure
 - [ ] Preprocess dataset
@@ -27,8 +28,8 @@
 ---
 
 ## Phase 4 — Gomoku Game
-- [ ] Study Gomoku rules
-- [ ] Design game architecture
+- [x] Study Gomoku rules
+- [x] Design game architecture
 - [ ] Develop game engine
 - [ ] Implement game logic
 - [ ] Test game

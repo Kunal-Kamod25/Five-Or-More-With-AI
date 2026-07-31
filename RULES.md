@@ -4,7 +4,7 @@
 - **15x15** (standard competitive size, matches most public datasets)
 
 ## Ruleset
-- [ ] Freestyle Gomoku — first to 5-in-a-row (or more) wins, no restrictions
+- [x] Freestyle Gomoku — first to 5-in-a-row (or more) wins, no restrictions
 - [ ] Renju rules — Black (first player) has forbidden moves:
       double-three, double-four, and overline (6+ in a row does NOT count as a win for Black)
 

@@ -1,0 +1,680 @@
+FIVE OR MORE WITH AI
+SETUP & PROGRESS COMMAND LOG
+================================
+
+Project repository:
+https://github.com/Kunal-Kamod25/Five-Or-More-With-AI
+
+Game repository:
+https://github.com/jackinf/lines
+
+Project location:
+D:\Projects\Five-Or-More-With-AI
+
+IMPORTANT:
+- Keep the .venv active when working with Python.
+- Do not install additional ML/RL packages unless the project actually needs them.
+- Do not modify the original game unnecessarily.
+- Current approach: use jackinf/lines as the game engine; eventually expose its internal state/action to Python/PyTorch.
+- Training should preferably use internal game state, not mouse/screenshot automation.
+- Mouse automation may be used later for a final demonstration.
+
+--------------------------------------------------
+1. PYTHON INSTALLATION
+--------------------------------------------------
+
+Installed:
+Python 3.12.10
+
+Installation location:
+C:\Users\lunga\AppData\Local\Programs\Python\Python312
+
+During installation:
+- Checked "Add python.exe to PATH"
+- Used default "Install Now" location.
+
+Verification commands:
+
+python --version
+
+python -m pip --version
+
+Expected/confirmed:
+Python 3.12.10
+pip 25.0.1 initially
+
+--------------------------------------------------
+2. CLONE / OPEN PROJECT
+--------------------------------------------------
+
+Project was cloned/opened under:
+
+D:\Projects\Five-Or-More-With-AI
+
+The repository already contained project folders such as:
+.venv
+data
+docs
+game_engine
+notebooks
+report
+src
+etc.
+
+To enter project:
+
+cd D:\Projects\Five-Or-More-With-AI
+
+--------------------------------------------------
+3. PYTHON VIRTUAL ENVIRONMENT
+--------------------------------------------------
+
+Created:
+
+python -m venv .venv
+
+PowerShell initially blocked activation because script execution was disabled.
+
+Fixed for the current Windows user with:
+
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+Then activated:
+
+.venv\Scripts\Activate.ps1
+
+Successful prompt:
+
+(.venv) PS D:\Projects\Five-Or-More-With-AI>
+
+Verified Python:
+
+python --version
+
+Verified Python executable:
+
+where.exe python
+
+Important result:
+D:\Projects\Five-Or-More-With-AI\.venv\Scripts\python.exe
+
+The other global Python paths may also appear, but the .venv Python is first while the environment is active.
+
+--------------------------------------------------
+4. PIP
+--------------------------------------------------
+
+Upgraded pip:
+
+python -m pip install --upgrade pip
+
+Confirmed current pip:
+
+pip 26.2.1
+
+Use:
+
+python -m pip ...
+
+instead of relying on a global pip command.
+
+--------------------------------------------------
+5. PYTORCH
+--------------------------------------------------
+
+Installed:
+
+python -m pip install torch
+
+Confirmed:
+PyTorch 2.13.0+cpu
+
+PyTorch dependencies were installed automatically, including:
+- MarkupSafe
+- filelock
+- fsspec
+- jinja2
+- mpmath
+- networkx
+- setuptools
+- sympy
+- typing-extensions
+
+Do not separately install those unless needed.
+
+Verified PyTorch:
+
+python -c "import torch; print('PyTorch:', torch.__version__)"
+
+Tested tensor operation:
+
+python -c "import torch; x=torch.rand(3,3); print(x)"
+
+Tested neural network:
+
+python -c "import torch; import torch.nn as nn; model=nn.Linear(9,2); x=torch.rand(1,9); print('Output:', model(x)); print('PyTorch OK')"
+
+Result:
+PyTorch OK
+
+--------------------------------------------------
+6. NUMPY + MATPLOTLIB
+--------------------------------------------------
+
+Installed:
+
+python -m pip install numpy matplotlib
+
+Confirmed:
+NumPy 2.5.2
+Matplotlib 3.11.1
+
+Verification:
+
+python -c "import torch, numpy, matplotlib; print('PyTorch:', torch.__version__); print('NumPy:', numpy.__version__); print('Matplotlib:', matplotlib.__version__)"
+
+--------------------------------------------------
+7. CUDA
+--------------------------------------------------
+
+Checked:
+
+python -c "import torch; print('CUDA available:', torch.cuda.is_available())"
+
+Result:
+
+CUDA available: False
+
+Current PyTorch build is:
+2.13.0+cpu
+
+This is currently acceptable for the project. Do not change the PyTorch installation just for CUDA yet. We can revisit GPU acceleration if training requirements justify it.
+
+--------------------------------------------------
+8. RUST INSTALLATION
+--------------------------------------------------
+
+Rust was not originally installed.
+
+Installed Rust using rustup.
+
+Windows toolchain:
+x86_64-pc-windows-msvc
+
+Stable toolchain.
+
+Rust installer required Microsoft build components:
+- MSVC v143 / VS 2022 C++ build tools
+- Windows SDK
+- Desktop development with C++ workload was used/recommended.
+
+Verified:
+
+rustc --version
+cargo --version
+
+Confirmed:
+rustc 1.97.1 (8bab26f4f 2026-07-14)
+cargo 1.97.1 (c980f4866 2026-06-30)
+
+--------------------------------------------------
+9. GAME REPOSITORY
+--------------------------------------------------
+
+Game chosen:
+jackinf/lines
+
+Repository:
+https://github.com/jackinf/lines
+
+It is a Rust/Bevy implementation of Five or More / Color Lines.
+
+It was cloned into:
+
+D:\Projects\Five-Or-More-With-AI\game_engine\lines
+
+Commands used:
+
+cd game_engine
+
+git clone https://github.com/jackinf/lines.git
+
+cd lines
+
+Check files:
+
+dir
+
+Expected files/folders included:
+Cargo.toml
+Cargo.lock
+README.md
+assets
+docs
+src
+
+--------------------------------------------------
+10. RUN ORIGINAL GAME
+--------------------------------------------------
+
+From:
+
+D:\Projects\Five-Or-More-With-AI\game_engine\lines
+
+Run:
+
+cargo run
+
+The game successfully compiled and launched.
+
+Milestone completed:
+Original jackinf/lines game runs successfully on the computer.
+
+IMPORTANT:
+The original game has not been intentionally modified so far.
+
+--------------------------------------------------
+11. SOURCE CODE INSPECTION
+--------------------------------------------------
+
+We inspected the source one file at a time.
+
+Command:
+
+Get-ChildItem src
+
+Command:
+
+Get-ChildItem src -Recurse -File
+
+Important source folders:
+actions
+components
+events
+event_handlers
+resources
+systems
+types
+
+Important files discovered:
+
+src/components/piece.rs
+src/types/piece_color.rs
+src/resources/selection_info.rs
+src/resources/score.rs
+src/event_handlers/validate_move_event_handler.rs
+src/event_handlers/spawn_new_pieces_event_handler.rs
+src/event_handlers/calculate_movement_path_event_handler.rs
+src/systems/select_piece.rs
+src/systems/move_pieces.rs
+src/systems/start.rs
+src/constants.rs
+
+--------------------------------------------------
+12. GAME STATE FINDINGS
+--------------------------------------------------
+
+Piece structure:
+
+Piece contains:
+- coord
+- piece_color
+- bouncer
+
+The bouncer is visual animation and should not be part of the RL state.
+
+Piece provides:
+coord()
+set_coord()
+piece_color()
+
+Seven colors exist:
+Red
+Green
+Blue
+Yellow
+Purple
+Cyan
+Orange
+
+Proposed RL board encoding:
+
+0 = empty
+1 = Red
+2 = Green
+3 = Blue
+4 = Yellow
+5 = Purple
+6 = Cyan
+7 = Orange
+
+Proposed state:
+9 x 9 integer grid
+
+The game itself creates a Coord -> PieceColor map from active pieces when checking the board.
+
+--------------------------------------------------
+13. BOARD CONSTANTS
+--------------------------------------------------
+
+From src/constants.rs:
+
+GRID_WIDTH = 9
+GRID_HEIGHT = 9
+MAX_PIECES = GRID_WIDTH * GRID_HEIGHT = 81
+
+Coord type:
+
+type Coord = (usize, usize)
+
+So:
+- Board = 9 x 9
+- Maximum occupied cells = 81
+- Coordinates use (x, y)
+
+--------------------------------------------------
+14. INITIAL GAME STATE
+--------------------------------------------------
+
+src/systems/start.rs sends:
+
+SpawnNewPiecesEvent::new(5)
+
+Therefore:
+- Initial state starts with 5 randomly generated pieces.
+
+The spawning system chooses random:
+- positions
+- colors
+
+and prevents newly spawned pieces from overlapping.
+
+--------------------------------------------------
+15. ACTION / PLAYER MOVE
+--------------------------------------------------
+
+Human input flow:
+
+Mouse click on a piece
+        ->
+Piece selected
+        ->
+Mouse click on destination tile
+        ->
+CalculateMovementPathEvent
+        ->
+A* pathfinding
+        ->
+Movement
+        ->
+Move validation
+        ->
+Line detection / scoring
+        ->
+Spawn new pieces
+
+The important action concept for RL is:
+
+SOURCE -> DESTINATION
+
+Example:
+
+(x1, y1) -> (x2, y2)
+
+The AI should eventually choose a move in logical coordinates rather than pixel coordinates.
+
+--------------------------------------------------
+16. PATHFINDING
+--------------------------------------------------
+
+src/event_handlers/calculate_movement_path_event_handler.rs
+
+The game uses:
+petgraph::algo::astar
+
+A* calculates a path from the selected piece to the target tile.
+
+Occupied cells are treated as obstacles.
+
+Movement is horizontal/vertical through adjacent cells.
+
+Therefore:
+The RL agent does NOT need to learn pathfinding.
+
+The agent can choose:
+piece + destination
+
+The existing Rust game can handle:
+pathfinding + movement.
+
+--------------------------------------------------
+17. MOVEMENT
+--------------------------------------------------
+
+src/systems/move_pieces.rs
+
+The piece follows the calculated path.
+
+Once it reaches the final destination:
+
+piece.set_coord(coord)
+
+Then:
+
+ValidateMoveEvent
+
+is sent with:
+
+NextPlannedMove::SpawnPieces
+
+So the move is logically completed before the next game stage.
+
+--------------------------------------------------
+18. SCORING / REWARD INFORMATION
+--------------------------------------------------
+
+src/event_handlers/validate_move_event_handler.rs
+
+The game checks:
+- horizontal
+- vertical
+- diagonal right-down
+- diagonal right-up
+
+A line is cleared when length >= 5.
+
+Current score rules:
+
+5 balls = 10 points
+6 balls = 12 points
+7 balls = 14 points
+8 balls = 16 points
+9 balls = 18 points
+
+These are the game's native scoring rules.
+
+IMPORTANT:
+Do not automatically assume the game's score is the final RL reward design.
+Reward shaping will be a later research/design decision.
+
+--------------------------------------------------
+19. NEW PIECE SPAWNING
+--------------------------------------------------
+
+After a normal move, the game sends:
+
+SpawnNewPiecesEvent::new(3)
+
+Therefore:
+- 3 new pieces normally spawn after a move.
+- Random positions are selected.
+- Random colors are selected.
+- New pieces cannot overlap existing pieces.
+
+If the board has no empty space, game over is triggered.
+
+--------------------------------------------------
+20. GAME STATE / GAME OVER
+--------------------------------------------------
+
+SelectionInfo has:
+
+GameState:
+- ChoosingPiece
+- MovingPiece
+- ValidatingMove
+- GameOver
+
+It provides:
+
+is_game_over()
+
+Game over occurs when there is no room for new pieces / board is full.
+
+--------------------------------------------------
+21. CURRENT RL ARCHITECTURE
+--------------------------------------------------
+
+Preferred architecture:
+
+Rust Game
+    |
+    | internal state/action interface
+    v
+Python
+    |
+    v
+PyTorch RL Agent
+    |
+    v
+Action
+    |
+    v
+Rust Game
+
+Training should NOT rely on:
+Mouse -> Screenshot -> Computer Vision
+
+because that would make training much slower and unnecessarily complicated.
+
+Potential final demonstration:
+
+Trained Python AI
+    ->
+Mouse automation
+    ->
+Actual Rust GUI game
+
+This would allow the final AI to visibly play the game like a human.
+
+--------------------------------------------------
+22. PROJECT APPROACH DECISION
+--------------------------------------------------
+
+We considered:
+1. jackinf/lines Rust implementation
+2. GNOME Five or More
+3. Building a Python-only game environment
+
+Decision:
+Continue with jackinf/lines.
+
+Reason:
+- Already runs successfully.
+- Small and understandable source.
+- Game state is accessible internally.
+- Action pipeline is understandable.
+- Existing A* pathfinding can be reused.
+- Existing scoring and spawning can be reused.
+- Suitable for a 4-month Master's project.
+
+Caveat:
+It is NOT a ready-made RL environment. We will need to add a small RL interface.
+
+--------------------------------------------------
+23. CURRENT MILESTONES
+--------------------------------------------------
+
+Milestone 1:
+Run original game
+STATUS: COMPLETE
+
+Milestone 2:
+Understand game state
+STATUS: MOSTLY COMPLETE
+
+Milestone 3:
+Understand action pipeline
+STATUS: MOSTLY COMPLETE
+
+Milestone 4:
+Create minimal RL interface
+STATUS: NEXT
+
+Milestone 5:
+Create/test random agent
+STATUS: NOT STARTED
+
+Milestone 6:
+Implement baseline strategy
+STATUS: NOT STARTED
+
+Milestone 7:
+Implement DQN / selected RL algorithm
+STATUS: NOT STARTED
+
+Milestone 8:
+Train and evaluate
+STATUS: NOT STARTED
+
+Milestone 9:
+Connect trained AI to visual game
+STATUS: NOT STARTED
+
+--------------------------------------------------
+24. CURRENT STATUS — DO NOT CHANGE YET
+--------------------------------------------------
+
+Python environment:
+READY
+
+Rust environment:
+READY
+
+Game:
+RUNS
+
+Game source:
+INSPECTED
+
+Original game:
+NOT intentionally modified yet
+
+Current next decision:
+Implement the first very small Rust modification to expose/print the 9x9 board state.
+
+Proposed state:
+9x9 grid with values 0-7.
+
+Before implementing the RL interface, verify the state representation carefully.
+
+--------------------------------------------------
+25. IMPORTANT WORKING RULE
+--------------------------------------------------
+
+Proceed ONE STEP AT A TIME.
+
+Do not:
+- install random packages
+- modify multiple files at once
+- rewrite the game
+- jump directly into DQN
+- add mouse automation before the core RL environment works
+
+For each change:
+1. Make one small change.
+2. Compile/run.
+3. Verify.
+4. Commit to Git.
+5. Move to the next objective.
+

@@ -1,13 +1,16 @@
 # Python
+
 __pycache__/
 *.py[cod]
 *.egg-info/
 .ipynb_checkpoints/
 .env
+.venv/
 venv/
 env/
 
 # Data & model artifacts — never commit these
+
 data/raw/*
 data/processed/*
 !data/raw/.gitkeep
@@ -19,12 +22,19 @@ experiments/*
 *.ckpt
 *.h5
 
+# Rust
+
+target/
+*.rs.bk
+
 # OS / editor
+
 .DS_Store
 .vscode/
 .idea/
 
 # Report build artifacts
-report/*.pdf
+
+report/*.pdf*
 report/*.aux
 report/*.log

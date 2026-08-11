@@ -38,3 +38,5 @@ target/
 report/*.pdf*
 report/*.aux
 report/*.log
+# External game engine - cloned separately
+game_engine/lines/

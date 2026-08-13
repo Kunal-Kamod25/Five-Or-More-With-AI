@@ -1,4 +1,4 @@
-name: gomoku-ai
+name: five-or-more-ai
 channels:
   - pytorch
   - conda-forge

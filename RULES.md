@@ -1,7 +1,7 @@
-# Gomoku Ruleset Decision
+# Five-Or-More Ruleset Decision
 
 ## Board Size
-- **15x15** (standard competitive size, matches most public datasets)
+- **9x9** (matches the `game_engine` implementation)
 
 ## Ruleset
 - [x] Freestyle Gomoku — first to 5-in-a-row (or more) wins, no restrictions

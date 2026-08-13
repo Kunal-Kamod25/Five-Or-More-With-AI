@@ -1,62 +1,79 @@
-# Five or More with AI
+<div align="center">
+  
+# 🎮 FIVE OR MORE
+### *Learning to Play Using Deep Reinforcement Learning*
 
-**A Master's research project focused on training a Reinforcement Learning agent to play the game "Five or More" (Color Lines).**
+![Illustration Image](https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&q=80&w=1000)
 
-## 🎯 Project Goal
-To train a Reinforcement Learning (RL) agent using PyTorch to play the classic puzzle game "Five or More". The project leverages a Rust-based game engine and aims to bridge the internal game state with a Python-based RL environment, eventually training algorithms like DQN to master the game. 
+[![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![Rust](https://img.shields.io/badge/Rust-000000?style=for-the-badge&logo=rust&logoColor=white)](https://www.rust-lang.org/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white)](https://pytorch.org/)
+[![NumPy](https://img.shields.io/badge/NumPy-013243?style=for-the-badge&logo=numpy&logoColor=white)](https://numpy.org/)
 
-## 🧠 Key Features & Scope
-- **Game Engine**: A Rust/Bevy implementation of Five or More ([jackinf/lines](https://github.com/jackinf/lines)).
-- **Architecture**: 
-  - **Environment**: Rust game engine exposing a 9x9 board state (0 for empty, 1-7 for colors).
-  - **AI Agent**: PyTorch-based RL Agent (Python 3.12).
-  - **Interface**: Internal state/action communication between Rust and Python (avoiding slow computer vision/mouse automation during training).
-- **Final Demonstration**: Potential use of mouse automation to let the trained AI visually play the actual Rust GUI game.
+</div>
 
-## 📂 Project Structure
-```text
-Five-Or-More-With-AI/
-├── game_engine/       # Contains the Rust game engine (jackinf/lines)
-├── src/               # Python source code for the RL agent
-├── notebooks/         # Exploration, EDA, prototyping
-├── data/              # Datasets / replay buffers (Gitignored)
-├── docs/              # Additional documentation
-├── experiments/       # Logs, checkpoints, outputs (Gitignored)
-└── report/            # Drafts and final paper
-```
+---
 
-## 🚀 Quick Setup
+## 📌 EXECUTIVE SUMMARY
+This project explores the application of Deep Reinforcement Learning (DRL) to the strategic board game **"Five or More."** By leveraging modern machine learning frameworks and system-level programming, we are engineering an intelligent AI agent capable of mastering gameplay strategy. The project addresses fundamental challenges of defining effective state representations and reward mechanisms in a highly stochastic environment.
 
-**1. Python Environment (Windows)**
-```powershell
-# Create virtual environment
-python -m venv .venv
+### 👥 PROJECT INFO
+- **Team Members:** Khumba Lunganlung, Kunal Kamod
+- **Repository:** [GitHub](https://github.com/Kunal-Kamod25/Five-Or-More-With-AI)
 
-# Activate environment
-.venv\Scripts\Activate.ps1
+## 🛠️ TECHNOLOGIES
+<div align="center">
+  <img src="https://skillicons.dev/icons?i=python,rust,pytorch,git" />
+</div>
 
-# Install dependencies
-python -m pip install torch numpy matplotlib
-```
+- **Languages:** Python, Rust
+- **Machine Learning:** PyTorch, NumPy
+- **Tools & Vis:** Matplotlib, Git, Cargo, Pip
 
-**2. Rust Environment**
-Ensure you have [Rust](https://rustup.rs/) installed (along with MSVC build tools for Windows).
+---
 
-```powershell
-# Navigate to the game engine
-cd game_engine/lines
+## 🎥 GAME VIDEO DEMONSTRATION
+*(Placeholder for Game Video)*
+> **Note:** The final trained agent will use mouse automation or a GUI interface to visually demonstrate its learned strategy here!
+<div align="center">
+  <img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMThpZm1laG9kZjQxc3M0M3N1MjVwNnZ4bXZrYnEwZ2M4NWRsZHp3biZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3o7TKSjRrfIPjeiVyM/giphy.gif" alt="Game Video Placeholder" width="600"/>
+</div>
 
-# Run the original game to verify it works
-cargo run
-```
+---
 
-## 📈 Current Status & Milestones
-We are taking an incremental approach to building the RL environment:
-- [x] Run the original Rust game natively.
-- [x] Analyze game state (9x9 grid, 7 colors) and action pipeline (reusing built-in A* pathfinding).
-- [ ] **Next up:** Create a minimal RL interface to expose the board state to Python.
-- [ ] Implement a baseline strategy / random agent.
-- [ ] Implement DQN and train the model.
-- [ ] Connect the trained AI to the visual game.
+## ⚙️ SYSTEM WORKFLOW (How It Is Made)
+The architecture operates on a continuous feedback loop:
+1. **Game Environment** outputs the current state (9x9 grid layout and next balls).
+2. The **State Representation** layer structures this for the Deep Neural Network.
+3. The Network calculates **policy values** to select an Action (moving a ball to a target destination).
+4. The environment executes the action, dispensing a **Reward** that loops back to optimize the agent's future decision-making.
 
-*For a detailed step-by-step log of commands and progress, refer to `Five-Or-More-AI_Setup-Commands-and-Steps.txt`.*
+---
+
+## 🎯 EXPECTED OUTCOMES (What Outcomes This Will Give)
+- 🤖 **Functional AI Agent:** Capable of autonomous, strategic gameplay.
+- 💾 **Trained Model:** Serialized model capturing learned policies.
+- 📊 **Performance Metrics:** Quantifiable improvement over random baselines, showing clear learning curves.
+
+---
+
+## ⚠️ CORE CHALLENGES
+> *"Bad programmers worry about the code. Good programmers worry about data structures and their relationships."* — **Linus Torvalds**
+
+* **Large State Space:** The game grid can have a vast number of permutations of colored balls, rendering traditional tabular Q-learning approaches impossible.
+* **Random Ball Generation:** Stochastic elements introduce immense uncertainty, requiring the AI to learn generalized, adaptable strategies rather than memorized sequences.
+* **Sparse Reward Function:** Rewards are only awarded when 5+ balls align. Designing intermediate tactical rewards is critical to successfully guide the agent's learning.
+
+---
+
+## 🚀 PROJECT OBJECTIVES
+- **Develop an AI Agent:** Capable of autonomous, strategic gameplay.
+- **Design the RL Environment:** Accurately simulating game mechanics (bridging Rust and Python).
+- **Define State & Action Spaces:** Creating scalable mappings of the board to neural network inputs.
+- **Train the Deep Learning Model:** Using robust DRL algorithms across an integrated Python/Rust architecture.
+- **Evaluate & Improve:** Iteratively enhancing gameplay via performance evaluations and hyperparameter tuning.
+
+<div align="center">
+  <br>
+  <img src="https://visitor-badge.laobi.icu/badge?page_id=Kunal-Kamod25.Five-Or-More-With-AI&" alt="Visitors" />
+</div>

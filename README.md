@@ -68,7 +68,7 @@ This project explores the application of Deep Reinforcement Learning (DRL) to th
 *(Placeholder for Game Video)*
 > **Note:** The final trained agent will use mouse automation or a GUI interface to visually demonstrate its learned strategy here!
 <div align="center">
-  <img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMThpZm1laG9kZjQxc3M0M3N1MjVwNnZ4bXZrYnEwZ2M4NWRsZHp3biZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3o7TKSjRrfIPjeiVyM/giphy.gif" alt="Game Video Placeholder" width="600"/>
+  <img src="./game_engine/lines/docs/demo.gif" alt="Game Video Demonstration" width="600"/>
 </div>
 
 ---

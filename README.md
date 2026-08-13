@@ -11,6 +11,38 @@
 [![NumPy](https://img.shields.io/badge/NumPy-013243?style=for-the-badge&logo=numpy&logoColor=white)](https://numpy.org/)
 
 </div>
+## 📅 PROJECT UPDATES / DEVELOPMENT LOG
+
+A chronological record of the development, experiments, challenges, and progress of the **Five or More with AI** project.
+
+### 🟢 Day X — [Update Title]
+
+**Date:** YYYY-MM-DD
+
+## **Today's Work**
+
+*
+*
+
+## **Problems / Challenges**
+
+*
+
+## **Solutions / Changes Made**
+
+*
+
+## **Results / Progress**
+
+*
+
+## **Next Steps**
+
+*
+
+**Progress:** 🟢 Completed / 🟡 In Progress / 🔴 Blocked / 🔵 Experimentation
+
+---
 
 ---
 

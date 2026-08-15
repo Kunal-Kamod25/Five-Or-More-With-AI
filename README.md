@@ -15,7 +15,7 @@
 
 A chronological record of the development, experiments, challenges, and progress of the **Five or More with AI** project.
 
-### 🟢 Day X — [Update Title]
+### 🟢 Day X — [Change log ver 0.1]
 
 **Date:** 2026-08-15
 

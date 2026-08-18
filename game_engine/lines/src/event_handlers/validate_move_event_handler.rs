@@ -1,12 +1,12 @@
 use std::collections::{HashMap, HashSet};
 
-use bevy::prelude::{Commands, Entity, EventReader, EventWriter, Query, ResMut, Text, With};
+use bevy::prelude::{Commands, Entity, EventReader, EventWriter, Query, Res, ResMut, Text, With};
 
 use crate::components::{Piece, ScoreText};
 use crate::constants::{Coord, GRID_HEIGHT, GRID_WIDTH};
 use crate::events::{NextPlannedMove, ShowGameOverEvent, SpawnNewPiecesEvent, ValidateMoveEvent};
 use crate::game_logic::{has_legal_move, score_and_find_matched_pieces};
-use crate::resources::{Score, SelectionInfo};
+use crate::resources::{GameConfig, Score, SelectionInfo};
 
 pub fn validate_move_event_handler(
     mut validate_move_event_reader: EventReader<ValidateMoveEvent>,
@@ -17,6 +17,7 @@ pub fn validate_move_event_handler(
     q_pieces: Query<(Entity, &Piece), With<Piece>>,
     mut selection_info: ResMut<SelectionInfo>,
     mut show_game_over_event_writer: EventWriter<ShowGameOverEvent>,
+    game_config: Res<GameConfig>,
 ) {
     if selection_info.is_game_over() {
         return;
@@ -58,7 +59,9 @@ pub fn validate_move_event_handler(
 
         match next_planned_move {
             NextPlannedMove::SpawnPieces => {
-                spawn_new_pieces_event_writer.send(SpawnNewPiecesEvent::new(3));
+                if let Some(amount) = game_config.spawn_amount() {
+                    spawn_new_pieces_event_writer.send(SpawnNewPiecesEvent::new(amount));
+                }
             }
             NextPlannedMove::Play => {
                 let occupied = piece_map.keys().copied().collect::<HashSet<_>>();

@@ -4,6 +4,7 @@ use std::cmp::PartialEq;
 
 #[derive(Debug, PartialEq)]
 pub enum GameState {
+    DifficultySelection,
     ChoosingPiece,
     MovingPiece,
     ValidatingMove,
@@ -83,6 +84,22 @@ impl SelectionInfo {
 
     pub fn start_choosing(&mut self) {
         self.state = GameState::ChoosingPiece;
+    }
+
+    pub fn start_new_game(&mut self) {
+        self.entity = None;
+        self.path.clear();
+        self.dest_coord = None;
+        self.needs_game_over_check = false;
+        self.state = GameState::ChoosingPiece;
+    }
+
+    pub fn start_difficulty_selection(&mut self) {
+        self.entity = None;
+        self.path.clear();
+        self.dest_coord = None;
+        self.needs_game_over_check = false;
+        self.state = GameState::DifficultySelection;
     }
 
     pub fn is_choosing(&self) -> bool {

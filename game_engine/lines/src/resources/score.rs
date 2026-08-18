@@ -11,4 +11,8 @@ impl Score {
     pub fn add(&mut self, amount: i32) {
         self.0 += amount;
     }
+
+    pub fn reset(&mut self) {
+        self.0 = 0;
+    }
 }

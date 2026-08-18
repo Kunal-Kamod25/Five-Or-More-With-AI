@@ -3,12 +3,12 @@ use crate::event_handlers::{
     show_game_over_event_hander, spawn_new_pieces_event_handler, validate_move_event_handler,
 };
 use crate::events::{
-    CalculateMovementPathEvent, CenterPieceToTileEvent, ShowGameOverEvent, SpawnNewPiecesEvent,
-    ValidateMoveEvent,
+    CalculateMovementPathEvent, CenterPieceToTileEvent, ShowDifficultyMenuEvent, ShowGameOverEvent,
+    SpawnNewPiecesEvent, ValidateMoveEvent,
 };
 use crate::systems::{
-    animate_selected_piece, move_pieces, select_piece, spawn_board, spawn_camera, spawn_score,
-    start,
+    animate_selected_piece, difficulty_menu_actions, game_over_actions, move_pieces, select_piece,
+    show_difficulty_menu, spawn_board, spawn_camera, spawn_difficulty_menu, spawn_score,
 };
 use bevy::prelude::{App, FixedUpdate, IntoSystemConfigs, PreStartup, Update};
 use bevy::DefaultPlugins;
@@ -31,6 +31,7 @@ fn main() {
         .add_event::<ValidateMoveEvent>()
         .add_event::<SpawnNewPiecesEvent>()
         .add_event::<ShowGameOverEvent>()
+        .add_event::<ShowDifficultyMenuEvent>()
         .add_event::<CenterPieceToTileEvent>()
         .add_event::<CalculateMovementPathEvent>()
         .add_systems(
@@ -49,9 +50,25 @@ fn main() {
         .insert_resource(resources::SelectionInfo::new())
         .add_systems(
             PreStartup,
-            (start, spawn_camera, spawn_score, spawn_board).chain(),
+            (
+                spawn_camera,
+                spawn_score,
+                spawn_board,
+                spawn_difficulty_menu,
+            )
+                .chain(),
         )
         .add_systems(Update, select_piece)
+        .add_systems(
+            Update,
+            (
+                game_over_actions,
+                show_difficulty_menu,
+                difficulty_menu_actions,
+            )
+                .chain(),
+        )
+        .insert_resource(resources::GameConfig::new())
         .add_systems(FixedUpdate, (move_pieces, animate_selected_piece))
         .run();
 }

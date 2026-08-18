@@ -16,3 +16,25 @@ pub fn is_sprite_clicked_vec2(translation: Vec2, cursor_world_pos: Vec2, sprite_
 
     in_x && in_y
 }
+
+#[cfg(test)]
+mod tests {
+    use super::is_sprite_clicked_vec2;
+    use bevy::prelude::Vec2;
+
+    #[test]
+    fn hit_testing_uses_world_y_without_mirroring() {
+        let sprite_position = Vec2::new(0.0, 100.0);
+
+        assert!(is_sprite_clicked_vec2(
+            sprite_position,
+            Vec2::new(0.0, 100.0),
+            50.0
+        ));
+        assert!(!is_sprite_clicked_vec2(
+            sprite_position,
+            Vec2::new(0.0, -100.0),
+            50.0
+        ));
+    }
+}

@@ -1,0 +1,295 @@
+FIVE OR MORE — FRIEND SETUP INSTRUCTIONS
+==============================================
+
+Purpose
+-------
+This file gets the Rust/Bevy game engine working from the main
+Five-Or-More-With-AI repository exactly as the current project setup.
+
+IMPORTANT:
+You already installed the required dependencies. The missing step was
+that the updated game_engine/lines folder was not previously integrated
+into the main repository.
+
+Do NOT clone the old standalone "lines" repository separately.
+The game engine is now part of this main repository.
+
+
+1. GET THE LATEST MAIN BRANCH
+-----------------------------
+
+Open PowerShell and go to the project:
+
+    cd D:\Projects\Five-Or-More-With-AI
+
+If your project is somewhere else, use your actual project path.
+
+Check the current repository:
+
+    git status
+
+Then get the latest changes:
+
+    git pull origin main
+
+The updated Rust game should now exist at:
+
+    game_engine\lines
+
+
+2. VERIFY THE GAME ENGINE EXISTS
+--------------------------------
+
+Run:
+
+    Get-ChildItem game_engine\lines
+
+You should see things such as:
+
+    src
+    assets
+    docs
+    tests
+    Cargo.toml
+    Cargo.lock
+    Readme.md
+
+
+3. ENTER THE RUST GAME
+----------------------
+
+Run:
+
+    cd game_engine\lines
+
+
+4. IMPORTANT — VISUAL STUDIO BUILD TOOLS
+----------------------------------------
+
+The project uses the Rust MSVC toolchain and requires the Visual C++
+linker (link.exe).
+
+If "cargo check" or "cargo test" gives:
+
+    error: linker `link.exe` not found
+
+then the Visual Studio Build Tools environment has not been loaded.
+
+If Build Tools are installed at the same custom location used by the
+current setup, initialize the x64 compiler environment with:
+
+    cmd /c "`"D:\Program Files\MicrosoftVisualStudio\BuildTools\VC\Auxiliary\Build\vcvars64.bat`" && cargo test"
+
+If your Build Tools are installed somewhere else, use the path to
+your own vcvars64.bat file instead.
+
+You can check whether link.exe is available with:
+
+    where.exe link
+
+If it prints a path to link.exe, the linker is available in the current
+terminal environment.
+
+
+5. CHECK THAT THE PROJECT COMPILES
+----------------------------------
+
+From:
+
+    game_engine\lines
+
+run:
+
+    cargo check
+
+Expected result:
+
+    Finished `dev` profile ...
+
+Warnings may appear. A warning is not necessarily a failure.
+
+If there is a real error, stop and send the complete terminal output
+before changing project files.
+
+
+6. RUN THE AUTOMATED TESTS
+--------------------------
+
+Run:
+
+    cargo test
+
+The current project contains game-logic tests covering things such as:
+
+    - reachable movement paths
+    - blocked destinations
+    - legal moves on partially filled boards
+    - no legal moves when the board is full
+    - additional game logic tests
+
+The exact number of tests may increase as the project develops.
+
+The important result is:
+
+    test result: ok
+
+
+7. RUN THE ACTUAL GAME
+----------------------
+
+Run:
+
+    cargo run
+
+The Bevy window should open and the game should start normally.
+
+The game currently supports:
+
+    - 9x9 board
+    - piece selection and movement
+    - A* pathfinding
+    - line detection/scoring
+    - Easy difficulty   = 1 new piece per turn
+    - Medium difficulty = 2 new pieces per turn
+    - Hard difficulty   = 3 new pieces per turn
+    - Game Over screen
+    - Start New Game
+    - Quit
+    - game state/score reset when restarting
+
+
+8. MANUAL SMOKE TEST
+--------------------
+
+After the game opens, verify:
+
+    1. Board appears correctly.
+    2. Pieces spawn correctly.
+    3. Clicking a piece selects the correct piece.
+    4. Clicking a reachable empty tile moves the selected piece.
+    5. Pieces cannot move through blocked cells.
+    6. Lines of 5 or more are detected and cleared.
+    7. Score updates correctly.
+    8. Difficulty changes the number of newly spawned pieces:
+           Easy   -> 1
+           Medium -> 2
+           Hard   -> 3
+    9. Game Over appears when no legal moves remain.
+   10. Start New Game clears the old game and starts a fresh game.
+   11. Quit closes the game normally.
+
+
+9. IMPORTANT — DO NOT COMMIT BUILD ARTIFACTS
+--------------------------------------------
+
+The Rust build directory is:
+
+    game_engine\lines\target
+
+It is intentionally ignored by Git.
+
+Do NOT remove or modify the project's .gitignore just to make target/
+appear in Git.
+
+The target directory will be recreated automatically by Cargo.
+
+
+10. IF SOMETHING DOES NOT WORK
+------------------------------
+
+First run:
+
+    git status
+
+Then:
+
+    git log --oneline -5
+
+Then:
+
+    cargo check
+
+If the problem is related to the MSVC linker, run:
+
+    where.exe link
+
+If link.exe is missing from the current terminal, initialize the
+Visual Studio Build Tools environment using the vcvars64.bat command
+described above.
+
+DO NOT randomly modify Rust source files to fix an environment/setup
+problem.
+
+Send the full error output if the problem remains.
+
+
+11. NORMAL WORKFLOW AFTER SETUP
+------------------------------
+
+Every time you want the newest version:
+
+    cd D:\Projects\Five-Or-More-With-AI
+    git pull origin main
+
+Then:
+
+    cd game_engine\lines
+    cargo check
+    cargo test
+    cargo run
+
+
+12. CURRENT PROJECT STRUCTURE
+-----------------------------
+
+Five-Or-More-With-AI/
+|
++-- game_engine/
+|   |
+|   +-- lines/
+|       |
+|       +-- assets/
+|       +-- docs/
+|       +-- src/
+|       +-- tests/
+|       +-- Cargo.toml
+|       +-- Cargo.lock
+|       +-- Readme.md
+|
++-- Python/RL project files
++-- .gitignore
++-- ...
+
+
+IMPORTANT FINAL NOTE
+--------------------
+
+The Rust game engine is now integrated into the MAIN
+Five-Or-More-With-AI repository.
+
+Therefore:
+
+    git pull origin main
+
+is all that should be needed to obtain the current game engine.
+
+Do NOT initialize another Git repository inside:
+
+    game_engine\lines
+
+Do NOT clone the old standalone lines repository into that folder.
+
+The expected relationship is:
+
+    Five-Or-More-With-AI (main Git repository)
+                |
+                +-- game_engine/lines (normal project folder)
+
+
+If everything works:
+
+    cargo check   -> successful
+    cargo test    -> successful
+    cargo run     -> game opens normally
+
+At that point your setup should match the current development setup.

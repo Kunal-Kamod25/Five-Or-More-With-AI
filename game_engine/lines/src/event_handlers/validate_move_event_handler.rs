@@ -1,6 +1,8 @@
 use std::collections::{HashMap, HashSet};
 
-use bevy::prelude::{Commands, Entity, EventReader, EventWriter, Query, Res, ResMut, Text, With};
+use bevy::prelude::{
+    Commands, Entity, EventReader, EventWriter, ParamSet, Query, Res, ResMut, Text, With,
+};
 
 use crate::components::{HighScoreText, Piece, ScoreText};
 use crate::constants::{Coord, GRID_HEIGHT, GRID_WIDTH};
@@ -13,8 +15,10 @@ pub fn validate_move_event_handler(
     mut spawn_new_pieces_event_writer: EventWriter<SpawnNewPiecesEvent>,
     mut commands: Commands,
     mut score: ResMut<Score>,
-    mut q_score_text: Query<&mut Text, With<ScoreText>>,
-    mut q_high_score_text: Query<&mut Text, With<HighScoreText>>,
+    mut score_texts: ParamSet<(
+        Query<&mut Text, With<ScoreText>>,
+        Query<&mut Text, With<HighScoreText>>,
+    )>,
     q_pieces: Query<(Entity, &Piece), With<Piece>>,
     mut selection_info: ResMut<SelectionInfo>,
     mut show_game_over_event_writer: EventWriter<ShowGameOverEvent>,
@@ -41,15 +45,15 @@ pub fn validate_move_event_handler(
             score.add(total_score);
             let previous_high_score = high_score.0;
             high_score.update(score.0);
-            if let Ok(mut score_text) = q_score_text.get_single_mut() {
+            if let Ok(mut score_text) = score_texts.p0().get_single_mut() {
                 if let Some(section) = score_text.sections.first_mut() {
                     section.value = format!("SCORE: {:05}", score.0);
                 }
             }
             if high_score.0 != previous_high_score {
-                if let Ok(mut high_score_text) = q_high_score_text.get_single_mut() {
+                if let Ok(mut high_score_text) = score_texts.p1().get_single_mut() {
                     if let Some(section) = high_score_text.sections.first_mut() {
-                        section.value = format!("HI: {:05}", high_score.0);
+                        section.value = format!("HIGH SCORE: {:05}", high_score.0);
                     }
                 }
             }

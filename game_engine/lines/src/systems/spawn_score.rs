@@ -24,7 +24,7 @@ pub fn spawn_score(mut commands: Commands, asset_server: Res<AssetServer>) {
 
     commands.spawn((
         TextBundle::from_section(
-            "HI: 00000",
+            "HIGH SCORE: 00000",
             TextStyle {
                 font: asset_server.load("fonts/AmericanCaptain.ttf"),
                 font_size: 30.0,

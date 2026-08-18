@@ -37,7 +37,7 @@ pub fn game_over_actions(
                 score.reset();
                 if let Ok(mut text) = score_text.get_single_mut() {
                     if let Some(section) = text.sections.first_mut() {
-                        section.value = "Score: 0".to_string();
+                        section.value = "SCORE: 00000".to_string();
                     }
                 }
                 selection_info.start_difficulty_selection();

@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use bevy::prelude::{Commands, Entity, EventReader, EventWriter, Query, Res, ResMut, Text, With};
 
-use crate::components::{Piece, ScoreText};
+use crate::components::{HighScoreText, Piece, ScoreText};
 use crate::constants::{Coord, GRID_HEIGHT, GRID_WIDTH};
 use crate::events::{NextPlannedMove, ShowGameOverEvent, SpawnNewPiecesEvent, ValidateMoveEvent};
 use crate::game_logic::{has_legal_move, score_and_find_matched_pieces};
@@ -14,6 +14,7 @@ pub fn validate_move_event_handler(
     mut commands: Commands,
     mut score: ResMut<Score>,
     mut q_score_text: Query<&mut Text, With<ScoreText>>,
+    mut q_high_score_text: Query<&mut Text, With<HighScoreText>>,
     q_pieces: Query<(Entity, &Piece), With<Piece>>,
     mut selection_info: ResMut<SelectionInfo>,
     mut show_game_over_event_writer: EventWriter<ShowGameOverEvent>,
@@ -38,10 +39,18 @@ pub fn validate_move_event_handler(
             next_planned_move = NextPlannedMove::Play;
 
             score.add(total_score);
+            let previous_high_score = high_score.0;
             high_score.update(score.0);
             if let Ok(mut score_text) = q_score_text.get_single_mut() {
                 if let Some(section) = score_text.sections.first_mut() {
-                    section.value = format!("Score: {}", score.0);
+                    section.value = format!("SCORE: {:05}", score.0);
+                }
+            }
+            if high_score.0 != previous_high_score {
+                if let Ok(mut high_score_text) = q_high_score_text.get_single_mut() {
+                    if let Some(section) = high_score_text.sections.first_mut() {
+                        section.value = format!("HI: {:05}", high_score.0);
+                    }
                 }
             }
         }

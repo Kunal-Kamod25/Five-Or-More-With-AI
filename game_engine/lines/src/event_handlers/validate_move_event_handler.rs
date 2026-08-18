@@ -6,7 +6,7 @@ use crate::components::{Piece, ScoreText};
 use crate::constants::{Coord, GRID_HEIGHT, GRID_WIDTH};
 use crate::events::{NextPlannedMove, ShowGameOverEvent, SpawnNewPiecesEvent, ValidateMoveEvent};
 use crate::game_logic::{has_legal_move, score_and_find_matched_pieces};
-use crate::resources::{GameConfig, Score, SelectionInfo};
+use crate::resources::{GameConfig, HighScore, Score, SelectionInfo};
 
 pub fn validate_move_event_handler(
     mut validate_move_event_reader: EventReader<ValidateMoveEvent>,
@@ -18,6 +18,7 @@ pub fn validate_move_event_handler(
     mut selection_info: ResMut<SelectionInfo>,
     mut show_game_over_event_writer: EventWriter<ShowGameOverEvent>,
     game_config: Res<GameConfig>,
+    mut high_score: ResMut<HighScore>,
 ) {
     if selection_info.is_game_over() {
         return;
@@ -37,6 +38,7 @@ pub fn validate_move_event_handler(
             next_planned_move = NextPlannedMove::Play;
 
             score.add(total_score);
+            high_score.update(score.0);
             if let Ok(mut score_text) = q_score_text.get_single_mut() {
                 if let Some(section) = score_text.sections.first_mut() {
                     section.value = format!("Score: {}", score.0);

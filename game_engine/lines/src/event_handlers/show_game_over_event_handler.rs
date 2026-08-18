@@ -7,12 +7,13 @@ use bevy::prelude::{
 
 use crate::components::{GameOverButton, GameOverOverlay};
 use crate::events::ShowGameOverEvent;
-use crate::resources::{Score, SelectionInfo};
+use crate::resources::{HighScore, Score, SelectionInfo};
 
 pub fn show_game_over_event_hander(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     score: Res<Score>,
+    high_score: Res<HighScore>,
     mut selection_info: ResMut<SelectionInfo>,
     mut show_game_over_event_reader: EventReader<ShowGameOverEvent>,
 ) {
@@ -55,6 +56,15 @@ pub fn show_game_over_event_hander(
                         font: asset_server.load("fonts/AmericanCaptain.ttf"),
                         font_size: 100.0,
                         color: Color::WHITE,
+                    },
+                ));
+
+                parent.spawn(TextBundle::from_section(
+                    &format!("Session High Score: {}", high_score.0),
+                    TextStyle {
+                        font: asset_server.load("fonts/AmericanCaptain.ttf"),
+                        font_size: 70.0,
+                        color: Color::GOLD,
                     },
                 ));
 

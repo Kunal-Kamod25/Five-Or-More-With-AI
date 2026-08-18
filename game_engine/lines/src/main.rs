@@ -69,6 +69,7 @@ fn main() {
                 .chain(),
         )
         .insert_resource(resources::GameConfig::new())
+        .insert_resource(resources::HighScore::new())
         .add_systems(FixedUpdate, (move_pieces, animate_selected_piece))
         .run();
 }

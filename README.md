@@ -22,6 +22,7 @@ A chronological record of the development, experiments, challenges, and progress
 ## **Today's Work**
 
 *Fixed some game bugs, improved efficiency in board state for A* algorithm
+*Start Learning about how to setup a RL Environment.
 
 **Progress:** 🟢 Completed / 🟡 In Progress / 🔴 Blocked / 🔵 Experimentation
 

@@ -4,30 +4,23 @@
 - **9x9** (matches the `game_engine` implementation)
 
 ## Ruleset
-- [x] Freestyle Gomoku — first to 5-in-a-row (or more) wins, no restrictions
-- [ ] Renju rules — Black (first player) has forbidden moves:
-      double-three, double-four, and overline (6+ in a row does NOT count as a win for Black)
+- **Five or More** rules
 
-**Chosen: [FILL IN]**
+## Mechanics
+- The game is played on a 9x9 grid.
+- Players move one ball per turn to an empty cell.
+- A ball can only be moved if there is a clear, unblocked path to the destination.
+- Every turn, unless the player scores, 3 new balls of random colors are added to random empty cells.
+- The player scores by aligning 5 or more balls of the same color horizontally, vertically, or diagonally.
+- Aligned balls are removed from the board, and the player gets a turn without new balls being added.
+- The game ends when the board is completely full and no more moves can be made.
 
 ## Why We Chose This
-[Write your reasoning here. Important: check which ruleset your intended
-training dataset uses BEFORE finalizing this — if your dataset is Renju-based
-(e.g. RenjuNet) but your game engine is Freestyle, the model will learn moves
-your own engine considers illegal. This must match Mission 2's dataset choice.]
+This ruleset provides a stochastic environment perfect for Deep Reinforcement Learning, challenging the agent to plan ahead and handle uncertainty in ball generation.
 
-## Win Condition (detail, fill in once ruleset chosen)
-- Line directions checked: horizontal, vertical, diagonal (both directions)
-- Exact-5 vs 5-or-more: [depends on ruleset above]
-
-## Turn Order
-- Black moves first, placing on... [center? any convention your dataset uses?]
-- Players alternate turns
-
-## Forbidden Moves (only if Renju chosen)
-- Double-three: [explain in your own words]
-- Double-four: [explain in your own words]
-- Overline: [explain in your own words]
+## Win Condition / Goal
+- There is no traditional "win" condition against an opponent; the goal is to maximize the score before the board fills up.
+- The RL agent will focus on maximizing cumulative rewards over an episode.
 
 ## Open Questions
-- [ ] Confirm dataset ruleset matches this document (revisit in Mission 2)
+- [ ] Define the exact reward shaping (e.g., intermediate rewards for 3 or 4 in a row, penalties for filling the board).

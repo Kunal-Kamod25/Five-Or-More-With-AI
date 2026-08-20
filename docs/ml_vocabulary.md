@@ -1,19 +1,19 @@
-# ML Vocabulary — Campaign 0, Mission 0
+# ML Vocabulary - RL Environment
 
-Fill in EVERY definition in your own words, specific to OUR Gomoku project.
-Do not copy generic textbook definitions — if you can't phrase it in terms
-of Gomoku boards and moves, you haven't understood it yet. Discuss out loud
+Fill in every definition in your own words, specific to our Five-or-More RL project.
+Do not copy generic textbook definitions - if you cannot phrase it in terms
+of board states, legal actions, and rewards, discuss it out loud as a team.
 as a team before writing; both of you should be able to say these unprompted.
 
 ---
 
 ## Core Definitions
 
-**Feature**
-> [Your definition, in Gomoku terms — what IS the input to our model?]
+**Observation**
+> The 9x9 colored board and metadata returned to the agent.
 
-**Label**
-> [Your definition — what IS the "correct answer" we're training toward?]
+**Action**
+> A source cell and reachable destination selected by the agent.
 
 **Model**
 > [Your definition — what is it, conceptually, before we discuss architecture?]
@@ -27,20 +27,20 @@ as a team before writing; both of you should be able to say these unprompted.
 **Inference**
 > [Your definition — when does this happen in our final app?]
 
-**Loss (Loss Function)**
-> [Your definition — what is it measuring, in our specific case?]
+**Reward**
+> The immediate score change and terminal outcome returned after an action.
 
-**Overfitting**
-> [Your definition + a concrete Gomoku example of what this would look like]
+**Action Mask**
+> A filter that prevents the policy from selecting invalid source/destination pairs.
 
-**Underfitting**
-> [Your definition + a concrete Gomoku example]
+**Episode**
+> One complete game from reset until game over or the time limit.
 
 **Generalization**
 > [Your definition — why is this the actual goal, not just training accuracy?]
 
-**Train / Validation / Test Split**
-> [Your definition — why can't we evaluate on training data?]
+**Baseline**
+> A simple agent, such as random legal play, used to judge whether learning helps.
 
 ---
 
@@ -48,15 +48,14 @@ as a team before writing; both of you should be able to say these unprompted.
 
 | Generic ML Concept | Our Project's Version |
 |---|---|
-| Feature | A 15x15 Gomoku board state at some point in a game |
-| Label | The cell a human actually played next from that state |
-| Dataset | Thousands of (board, human move) pairs from public game records |
-| Model | A neural network (architecture TBD — Campaign 4) |
-| Training | Adjusting the network's parameters using recorded human moves |
-| Loss | How far off the model's predicted move is from the human's actual move |
-| Overfitting risk | Model memorizes specific famous games instead of general human tendencies |
-| Inference | The trained model predicting a move against a new, live opponent |
-| [Your own row] | [Something Gomoku-specific you're still unsure about — this becomes an Open Question in PLAN.md] |
+| Observation | A 9x9 colored board plus environment metadata |
+| Action | A legal source cell to destination cell movement |
+| Reward | Score change and terminal outcomes returned by the environment |
+| Policy | A model distribution over possible actions |
+| Value | The model's estimate of future episode return |
+| Training | Updating the policy and value model from collected episodes |
+| Action mask | The legal-action filter applied before selecting a move |
+| Inference | The trained policy selecting a move in the live game |
 
 ---
 

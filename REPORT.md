@@ -1,17 +1,17 @@
 # Research Report — Running Notes
 
-Keep this updated after EVERY mission. Write in plain language now; you will
-polish it into formal report prose in Month 4. This is far easier than trying
-to reconstruct 4 months of decisions from memory at the end.
+Keep this updated after every mission. Write in plain language now; it can be
+polished into formal report prose later.
 
 ---
 
-## [Date] — Mission 1: Base Camp
-- Team: [names]
-- Environment set up: Python 3.11, PyTorch, conda env `gomoku-ai`
-- Ruleset decision: [Freestyle / Renju] — reasoning: [why]
-- Board size: 15x15
-- Open questions carried forward: [list]
+## 2026-08-20 - RL Scope Correction
+- The project now targets the working 9x9 Five-or-More Rust game.
+- Reinforcement learning is the training direction for the next milestone.
+- The earlier 15x15 Gomoku behavioral-cloning documents were stale and have
+  been superseded; they are not the rules for the current implementation.
+- The next technical milestone is a deterministic headless environment with
+  seeded resets and legal-action masking.
 
 ---
 

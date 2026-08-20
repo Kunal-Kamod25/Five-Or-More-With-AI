@@ -20,4 +20,4 @@ dependencies:
 # To update after adding a new package:
 #   conda env export --no-builds > environment.yml
 # Always activate before working:
-#   conda activate gomoku-ai
+#   conda activate five-or-more-ai

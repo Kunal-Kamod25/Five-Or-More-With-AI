@@ -1,33 +1,36 @@
-# Five-Or-More Ruleset Decision
+# Five-or-More Rules
 
 ## Board Size
 - **9x9** (matches the `game_engine` implementation)
 
 ## Ruleset
-- [x] Freestyle Gomoku — first to 5-in-a-row (or more) wins, no restrictions
-- [ ] Renju rules — Black (first player) has forbidden moves:
-      double-three, double-four, and overline (6+ in a row does NOT count as a win for Black)
-
-**Chosen: [FILL IN]**
+This project uses the Five-or-More movement game implemented in the Rust
+engine. It is not Gomoku or Renju.
 
 ## Why We Chose This
-[Write your reasoning here. Important: check which ruleset your intended
-training dataset uses BEFORE finalizing this — if your dataset is Renju-based
-(e.g. RenjuNet) but your game engine is Freestyle, the model will learn moves
-your own engine considers illegal. This must match Mission 2's dataset choice.]
+The existing playable game and its tests already implement these mechanics.
+Keeping one ruleset avoids training an agent against rules that differ from the
+game the user sees.
 
-## Win Condition (detail, fill in once ruleset chosen)
-- Line directions checked: horizontal, vertical, diagonal (both directions)
-- Exact-5 vs 5-or-more: [depends on ruleset above]
+## Objective and Scoring
+- The board is a 9x9 grid.
+- Pieces are moved from an occupied cell to an empty cell.
+- A move is legal only when an orthogonal path exists through empty cells.
+- Lines of five or more same-colored pieces are cleared.
+- Horizontal, vertical, and both diagonal directions are checked.
+- The current engine awards points based on line length.
+- After a move that does not clear a line, new colored pieces are spawned.
+- The game ends when no legal move remains or no space remains for spawning.
 
 ## Turn Order
-- Black moves first, placing on... [center? any convention your dataset uses?]
-- Players alternate turns
+- The player selects one existing piece and an empty reachable destination.
+- The environment spawns new pieces after a move when no line was cleared.
+- Difficulty controls the number of spawned pieces: Easy = 1, Medium = 2,
+  Hard = 3.
 
-## Forbidden Moves (only if Renju chosen)
-- Double-three: [explain in your own words]
-- Double-four: [explain in your own words]
-- Overline: [explain in your own words]
+## RL Environment Requirements
+  spawning, and game-over logic.
 
 ## Open Questions
-- [ ] Confirm dataset ruleset matches this document (revisit in Mission 2)
+ [ ] Choose Easy, Medium, or Hard as the training default.
+ [ ] Decide whether invalid actions are rejected with a penalty or exposed only through action masking.

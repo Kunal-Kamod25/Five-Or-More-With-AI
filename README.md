@@ -24,7 +24,7 @@ A chronological record of the development, experiments, challenges, and progress
 
 
 
-— [Change log ver 0.1]
+###— [Change log ver 0.1]
 
 **Date:** 2026-08-15
 

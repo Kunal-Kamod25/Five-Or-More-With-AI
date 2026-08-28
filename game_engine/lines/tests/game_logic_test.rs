@@ -1,8 +1,69 @@
 use std::collections::HashMap;
 use std::collections::HashSet;
 
-use lines::game_logic::{find_path, score_and_find_matched_pieces};
+use lines::game_logic::{board_to_matrix, find_path, score_and_find_matched_pieces};
 use lines::types::PieceColor;
+
+#[test]
+fn test_empty_board_produces_a_9_by_9_zero_matrix() {
+    let matrix = board_to_matrix(&HashMap::new());
+
+    assert_eq!(matrix, [[0; 9]; 9]);
+    assert_eq!(matrix.len(), 9);
+    assert!(matrix.iter().all(|row| row.len() == 9));
+}
+
+#[test]
+fn test_piece_is_written_at_matrix_y_then_x_position() {
+    let piece_map = HashMap::from([((4, 2), PieceColor::Blue)]);
+
+    let matrix = board_to_matrix(&piece_map);
+
+    assert_eq!(matrix[2][4], 3);
+    assert_eq!(
+        matrix.iter().flatten().filter(|&&value| value != 0).count(),
+        1
+    );
+}
+
+#[test]
+fn test_piece_colors_have_distinct_stable_values() {
+    let colors = [
+        PieceColor::Red,
+        PieceColor::Green,
+        PieceColor::Blue,
+        PieceColor::Yellow,
+        PieceColor::Purple,
+        PieceColor::Cyan,
+        PieceColor::Orange,
+    ];
+    let values = colors
+        .iter()
+        .map(PieceColor::observation_value)
+        .collect::<Vec<_>>();
+    let repeated_color_map = HashMap::from([((1, 1), PieceColor::Red), ((7, 7), PieceColor::Red)]);
+    let repeated_color_matrix = board_to_matrix(&repeated_color_map);
+
+    assert_eq!(values, vec![1, 2, 3, 4, 5, 6, 7]);
+    assert_eq!(repeated_color_matrix[1][1], 1);
+    assert_eq!(repeated_color_matrix[7][7], 1);
+}
+
+#[test]
+fn test_multiple_pieces_are_represented_and_empty_cells_remain_zero() {
+    let piece_map = HashMap::from([
+        ((0, 0), PieceColor::Red),
+        ((8, 8), PieceColor::Orange),
+        ((3, 6), PieceColor::Cyan),
+    ]);
+
+    let matrix = board_to_matrix(&piece_map);
+
+    assert_eq!(matrix[0][0], 1);
+    assert_eq!(matrix[8][8], 7);
+    assert_eq!(matrix[6][3], 6);
+    assert_eq!(matrix[4][4], 0);
+}
 
 #[test]
 fn test_path_exists_when_destination_is_reachable() {

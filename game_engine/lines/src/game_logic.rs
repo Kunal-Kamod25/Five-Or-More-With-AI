@@ -2,6 +2,7 @@ use crate::constants::{Coord, GRID_HEIGHT, GRID_WIDTH};
 use crate::types::PieceColor;
 use petgraph::algo::astar;
 use petgraph::Graph;
+use rand::Rng;
 use std::collections::{HashMap, HashSet};
 
 pub fn has_legal_move(occupied: &HashSet<Coord>) -> bool {
@@ -29,6 +30,37 @@ pub fn has_legal_move(occupied: &HashSet<Coord>) -> bool {
     }
 
     false
+}
+
+pub fn board_to_matrix(piece_map: &HashMap<Coord, PieceColor>) -> [[u8; GRID_WIDTH]; GRID_HEIGHT] {
+    let mut matrix = [[0; GRID_WIDTH]; GRID_HEIGHT];
+
+    for (&(x, y), color) in piece_map {
+        if x < GRID_WIDTH && y < GRID_HEIGHT {
+            matrix[y][x] = color.observation_value();
+        }
+    }
+
+    matrix
+}
+
+pub fn create_seed_pieces<R: Rng + ?Sized>(
+    amount: usize,
+    taken_pieces: &HashSet<Coord>,
+    rng: &mut R,
+) -> Vec<(Coord, PieceColor)> {
+    let mut available_positions = (0..GRID_HEIGHT)
+        .flat_map(|y| (0..GRID_WIDTH).map(move |x| (x, y)))
+        .filter(|coord| !taken_pieces.contains(coord))
+        .collect::<Vec<_>>();
+    use rand::seq::SliceRandom;
+    available_positions.shuffle(rng);
+
+    available_positions
+        .into_iter()
+        .take(amount)
+        .map(|coord| (coord, PieceColor::choose_piece_color_with_rng(rng)))
+        .collect()
 }
 
 /// Finds an A* path from start to destination.

@@ -9,6 +9,7 @@ use crate::events::{
 use crate::systems::{
     animate_selected_piece, difficulty_menu_actions, game_over_actions, move_pieces, select_piece,
     show_difficulty_menu, spawn_board, spawn_camera, spawn_difficulty_menu, spawn_score,
+    log_board_matrix_system,
 };
 use bevy::prelude::{App, FixedUpdate, IntoSystemConfigs, PreStartup, Update};
 use bevy::DefaultPlugins;
@@ -58,7 +59,7 @@ fn main() {
             )
                 .chain(),
         )
-        .add_systems(Update, select_piece)
+        .add_systems(Update, (select_piece, log_board_matrix_system))
         .add_systems(
             Update,
             (

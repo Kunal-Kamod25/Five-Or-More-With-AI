@@ -15,3 +15,6 @@ pub use select_piece::select_piece;
 pub use spawn_board::spawn_board;
 pub use spawn_camera::spawn_camera;
 pub use spawn_score::spawn_score;
+
+mod log_matrix;
+pub use log_matrix::log_board_matrix_system;

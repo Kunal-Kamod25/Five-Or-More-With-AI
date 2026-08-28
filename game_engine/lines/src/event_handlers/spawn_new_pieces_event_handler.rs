@@ -5,12 +5,13 @@ use bevy::math::Vec3;
 use bevy::prelude::{
     default, Commands, EventReader, EventWriter, Query, Res, Sprite, SpriteBundle, Transform,
 };
-use rand::seq::SliceRandom;
+use rand::thread_rng;
 
 use crate::actions::tile_to_world_pos;
 use crate::components::Piece;
-use crate::constants::{Coord, BALL_LAYER, BALL_SCALE, GRID_HEIGHT, GRID_WIDTH, MAX_PIECES};
+use crate::constants::{Coord, BALL_LAYER, BALL_SCALE, MAX_PIECES};
 use crate::events::{NextPlannedMove, ShowGameOverEvent, SpawnNewPiecesEvent, ValidateMoveEvent};
+use crate::game_logic::create_seed_pieces as create_seed_pieces_with_rng;
 use crate::resources::SelectionInfo;
 use crate::types::PieceColor;
 
@@ -65,18 +66,8 @@ pub fn spawn_new_pieces_event_handler(
 }
 
 fn create_seed_pieces(amount: usize, taken_pieces: &HashSet<Coord>) -> Vec<(Coord, PieceColor)> {
-    let mut rng = rand::thread_rng();
-    let mut available_positions = (0..GRID_HEIGHT)
-        .flat_map(|y| (0..GRID_WIDTH).map(move |x| (x, y)))
-        .filter(|coord| !taken_pieces.contains(coord))
-        .collect::<Vec<_>>();
-    available_positions.shuffle(&mut rng);
-
-    available_positions
-        .into_iter()
-        .take(amount)
-        .map(|coord| (coord, PieceColor::choose_piece_color()))
-        .collect()
+    let mut rng = thread_rng();
+    create_seed_pieces_with_rng(amount, taken_pieces, &mut rng)
 }
 
 #[cfg(test)]

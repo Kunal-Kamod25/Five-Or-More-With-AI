@@ -15,6 +15,13 @@
 
 A chronological record of the development, experiments, challenges, and progress of the **Five or More with AI** project.
 
+### — [Change log ver 0.3]
+**Date:** 2026-08-28
+* Added PyO3 bindings to bridge Khumba's Rust game logic with the Python AI environment.
+* Implemented live matrix logging in Bevy to extract the 9x9 board state in real-time and save it to `data/raw/`.
+* Created a Python live viewer script (`matrix_viewer.py`) to display the board matrix side-by-side with the game.
+* Prepared RL Setup documentation and Matrix Implementation Guide for upcoming presentation.
+
 ### — [Change log ver 0.2]
 **Date:** 2026-08-26
 *Added functions to take state of the game, the state is to be converted to data in form of a 9x9 matrices.

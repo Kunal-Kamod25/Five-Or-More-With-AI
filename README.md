@@ -15,13 +15,20 @@
 
 A chronological record of the development, experiments, challenges, and progress of the **Five or More with AI** project.
 
-### 🟢 Day X — [Change log ver 0.1]
+### — [Change log ver 0.2]
+**Date:** 2026-08-26
+*Added functions to take state of the game, the state is to be converted to data in form of a 9x9 matrices.
+*tested if the data are recorded properly.
+*Few bug fixes.
+
+
+
+
+### — [Change log ver 0.1]
 
 **Date:** 2026-08-15
-
-## **Today's Work**
-
 *Fixed some game bugs, improved efficiency in board state for A* algorithm
+*Start Learning about how to setup a RL Environment.
 
 **Progress:** 🟢 Completed / 🟡 In Progress / 🔴 Blocked / 🔵 Experimentation
 

@@ -1,18 +1,18 @@
-# Pipeline Diagram — Campaign 0, Mission 0
+# Pipeline Diagram - RL Environment
 
-This is the end-to-end pipeline mapping general ML concepts onto our
-specific Gomoku project. Both teammates should be able to explain every
-arrow from memory without looking at this file.
+This is the current end-to-end pipeline for training an agent on the
+Five-or-More game.
 
 ```mermaid
 flowchart LR
-    A["Raw Human Games<br/>(public Gomoku dataset)"] --> B["Dataset<br/>(board, human move) pairs<br/>= features + labels"]
-    B --> C["Model<br/>(neural network - black box for now)"]
-    C --> D["Training Loop<br/>uses Loss Function to compare<br/>predicted move vs actual human move"]
-    D -->|"adjusts parameters<br/>to reduce loss"| C
-    D --> E["Trained Model<br/>(parameters frozen)"]
-    E --> F["Inference<br/>New board state -> predicted move"]
-    F --> G["Live Gomoku App<br/>AI plays against a human"]
+   A["Rust GameState<br/>(9x9 board)"] --> B["Observation<br/>(board tensor + metadata)"]
+   B --> C["Policy and Value Model"]
+   C --> D["Masked Action<br/>(source -> destination)"]
+   D --> E["Environment Step<br/>(move, clear, spawn)"]
+   E --> F["Reward + Next Observation"]
+   F --> C
+   C --> G["Trained Policy"]
+   G --> H["Bevy Game<br/>AI plays against a human"]
 ```
 
 ## Notes on Each Stage

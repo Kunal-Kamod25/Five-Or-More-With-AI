@@ -1,7 +1,10 @@
-# Manual ML Exercise — Campaign 0, Mission 0
+# Manual ML Exercise - Superseded Campaign 0 Mission 0
+
+This is a completed historical exercise from the earlier Gomoku direction. It
+is retained for learning notes and is not part of the current RL workflow.
 
 ## Setup
-- Board size used for this exercise: 5x5 (toy board, not the real 15x15)
+- Board size used for this exercise: 5x5 toy board
 - Number of hypothetical positions invented: 5
 
 ## The 5 Toy Positions
@@ -64,9 +67,6 @@ Did it break? [Yes/No]
 
 ## Reflection Paragraph
 
-> Write 4-6 sentences: why doesn't a small hand-written rule scale to
-> capturing "human-like" behavior? What would you need to do to your rule
-> to cover more cases — and why does that process (adding exceptions
-> manually, forever) not scale to a full 15x15 board with thousands of
-> possible situations? Connect this explicitly to why we need a trained
-> model instead.
+> Write 4-6 sentences about why a small hand-written rule does not scale to
+> the many possible board states in the current 9x9 game. Connect this to why
+> we need a trained policy instead of an ever-growing list of exceptions.

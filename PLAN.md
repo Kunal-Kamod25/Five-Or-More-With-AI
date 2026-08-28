@@ -1,29 +1,32 @@
 # Project Plan / Mission Log
 
 ## Current Campaign / Mission
-**Campaign 1, Mission 1: Environment Setup & Integration**
+**Campaign 0, Mission 0: ML Bootcamp — Mental Model**
 Status: In Progress
 
 ## Mission History
 | Campaign | Mission | Name | Status | Completed Date | Notes |
 |----------|---------|------|--------|-----------------|-------|
-| 1 | 1 | Environment Setup | In Progress | - | Rust game engine logic, Python bindings, basic state representation |
+| - | 1 (early numbering) | Base Camp | In Progress | - | Env setup, repo structure, ruleset decision |
+| 0 | 0 | ML Bootcamp — Mental Model | In Progress | - | Vocabulary, manual ML exercise, pipeline diagram |
 
 ## Team Roles
 - Khumba Lunganlung: Game Engine (Rust), Integration
 - Kunal Kamod: RL Models, Training pipeline (Python)
 
 ## Open Questions
-- [ ] Define the exact reward function for the RL agent (e.g., shaping rewards for almost-cleared lines).
-- [ ] Finalize the Neural Network input structure (e.g., number of channels for board state vs upcoming balls).
+(Unresolved decisions — check this before starting new work, resolve before
+moving to the next mission)
+- [ ] Freestyle vs Renju ruleset — see RULES.md
+- [ ] Which public dataset to use (Mission 2 decision)
 
-## Timeline (high-level)
-- Phase 1: Game engine development (Rust) and Python bridging.
-- Phase 2: State representation, defining action space, and initial DRL setup.
-- Phase 3: Model training, hyperparameter tuning, and reward shaping.
-- Phase 4: Final evaluation and documentation.
+## Timeline (high-level, 4 months — refine as missions complete)
+- Month 1: Base camp, game engine, dataset acquisition + pipeline
+- Month 2: Board representation, first neural network, first training run
+- Month 3: Model iteration, evaluation methodology, player modeling
+- Month 4: Final evaluation, report writing, presentation prep
 
 ## Decision Log
 | Date | Decision | Reasoning |
 |------|----------|-----------|
-| 2026-08-19 | Transition from Gomoku to Five-or-More RL | Decided to pursue Deep RL in a highly stochastic environment instead of Behavioral Cloning. |
+| [date] | Board size = 15x15 | Matches standard datasets |

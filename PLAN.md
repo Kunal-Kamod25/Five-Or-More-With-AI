@@ -7,6 +7,7 @@ Status: Complete
 ## Mission History
 | Campaign | Mission | Name | Status | Completed Date | Notes |
 |----------|---------|------|--------|-----------------|-------|
+| 1 | 2 | Python-Rust Interop & Live Logging | Complete | 2026-08-28 | Added PyO3 bindings for game logic and live matrix extraction tool |
 | 1 | 1 | RL Environment Foundation | Complete | 2026-08-28 | Added a deterministic, Bevy-free Rust environment using shared game rules |
 | 0 | 0 | ML Bootcamp — Mental Model | Superseded | 2026-08-20 | Earlier Gomoku/behavioral-cloning direction replaced by the RL scope |
 
@@ -20,7 +21,7 @@ See `docs/team_roles.md` for detail.
 moving to the next mission)
 - [x] Extract pure game state from Bevy systems
 - [x] Choose training difficulty (Medium)
-- [ ] Choose Python/Rust bridge approach
+- [x] Choose Python/Rust bridge approach
 - [ ] Add Gymnasium and masked-PPO dependencies when implementation begins
 
 ## Timeline (high-level, 4 months — refine as missions complete)
@@ -36,6 +37,8 @@ report's methodology section)
 |------|----------|-----------|
 | 2026-08-20 | Project scope changed to 9x9 Five-or-More RL | Matches the working Rust game and requested next phase |
 | 2026-08-28 | RL environment uses Medium difficulty and seeded Rust RNG | Keeps the first API simple while enabling reproducible tests |
+| 2026-08-28 | Selected PyO3 for Rust-Python interop | Avoids rewriting game logic in Python while keeping performance high |
+| 2026-08-28 | Live matrix extraction via Bevy system | Safely dumps real-time state for RL observation without breaking graphics |
 
 ## Immediate Next Steps
 1. Run seeded random and greedy agents before training a neural policy.

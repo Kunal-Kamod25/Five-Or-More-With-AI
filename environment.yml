@@ -14,6 +14,7 @@ dependencies:
       - torch
       - torchvision
       - torchaudio
+      - python-docx
 
 # To create this environment:
 #   conda env create -f environment.yml

@@ -21,7 +21,12 @@ See `docs/team_roles.md` for detail.
 moving to the next mission)
 - [x] Extract pure game state from Bevy systems
 - [x] Choose training difficulty (Medium)
+<<<<<<< HEAD
 - [x] Choose Python/Rust bridge approach
+=======
+- [x] Validate the headless environment with a random legal-action agent
+- [ ] Choose Python/Rust bridge approach
+>>>>>>> f580572 (added test for environment, it is up and ready, tested for a random agent)
 - [ ] Add Gymnasium and masked-PPO dependencies when implementation begins
 
 ## Timeline (high-level, 4 months — refine as missions complete)
@@ -41,4 +46,4 @@ report's methodology section)
 | 2026-08-28 | Live matrix extraction via Bevy system | Safely dumps real-time state for RL observation without breaking graphics |
 
 ## Immediate Next Steps
-1. Run seeded random and greedy agents before training a neural policy.
+1. Choose the Python/Rust bridge approach before implementing the first RL algorithm.

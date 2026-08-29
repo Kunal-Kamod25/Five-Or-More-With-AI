@@ -1,4 +1,4 @@
-use crate::components::piece::Piece;
+use crate::components::Piece;
 use crate::constants::{GRID_HEIGHT, GRID_WIDTH};
 use crate::types::PieceColor;
 use bevy::prelude::*;

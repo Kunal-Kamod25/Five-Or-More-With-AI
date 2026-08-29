@@ -5,7 +5,9 @@ def clear_console():
     os.system('cls' if os.name == 'nt' else 'clear')
 
 def main():
-    file_path = os.path.join("data", "raw", "board_matrix_live.txt")
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.dirname(os.path.dirname(current_dir))
+    file_path = os.path.join(project_root, "data", "raw", "board_matrix_live.txt")
     
     # Ensure the directory exists
     os.makedirs(os.path.dirname(file_path), exist_ok=True)

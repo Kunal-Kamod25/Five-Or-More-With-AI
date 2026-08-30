@@ -6,7 +6,8 @@ Five-or-More AI Using Reinforcement Learning
 ## Goal
 Train an agent to play the existing 9x9 Five-or-More game through
 reinforcement learning. The agent will learn from board states, legal movement
-actions, line-clearing rewards, and game-over outcomes. The graphical Rust game
+actions, line-clearing rewards, and game-over outcomes. The graphical Rust game bevy
+
 and the headless training environment must use the same game rules.
 
 ## Fixed Decisions

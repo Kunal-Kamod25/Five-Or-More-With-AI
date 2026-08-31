@@ -32,7 +32,7 @@ pub fn log_board_matrix_system(
     
     // Format the matrix into a string
     let mut matrix_str = String::new();
-    for y in 0..GRID_HEIGHT {
+    for y in (0..GRID_HEIGHT).rev() {
         for x in 0..GRID_WIDTH {
             matrix_str.push_str(&format!("{} ", board[y][x]));
         }

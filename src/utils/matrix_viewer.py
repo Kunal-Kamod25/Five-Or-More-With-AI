@@ -39,7 +39,7 @@ def main():
                     print("LIVE 9x9 BOARD MATRIX (Five-or-More)")
                     print("====================================\n")
                     print(content)
-                    print("\n(Run the game in another window using `cd game_engine/lines && cargo run`)")
+                    print("\n(Game running in another terminal window)")
             
             time.sleep(0.1) # Check every 100ms
             

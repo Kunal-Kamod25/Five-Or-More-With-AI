@@ -15,6 +15,26 @@ polished into formal report prose later.
 
 ---
 
+## 2026-09-05 — Mission 3: Python RL Environment Skeleton (Gymnasium)
+### What we did
+- Created the core Python RL environment skeleton (`env.py`) using Gymnasium.
+- Built the `reset()`, `step()`, and `action_masks()` functions to let the PyTorch agent interact with the 9x9 board.
+
+### Why (how it connects to the final goal)
+- The PyTorch AI cannot understand raw Rust code. It needs a standard OpenAI Gym environment wrapper to know what the board looks like, what moves are legal, and what rewards it gets.
+
+### Decisions made
+- Used a flat discrete action space of 6,561 actions (81 start squares * 81 end squares) with action masking so the neural net doesn't waste time trying illegal moves.
+
+### Problems encountered
+- We had to figure out how to mathematically decode a single action integer (0-6560) back into start (X,Y) and end (X,Y) coordinates for the game engine.
+
+### Results/metrics
+- We successfully initialized the environment, but it's not fully connected to the Rust PyO3 bindings yet (currently using placeholders).
+
+### Open questions for next mission
+- How do we perfectly sync the Rust `py_has_legal_move` and `py_find_path` functions into our Python `step()` and `action_masks()`?
+
 ## [Date] — Campaign 0, Mission 0: ML Bootcamp / Mental Model
 ### What we did
 - Learned the core ML vocabulary (feature, label, model, parameters,

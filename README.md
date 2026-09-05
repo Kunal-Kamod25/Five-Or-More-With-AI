@@ -15,6 +15,12 @@
 
 A chronological record of the development, experiments, challenges, and progress of the **Five or More with AI** project.
 
+### — [Change log ver 0.4]
+**Date:** 2026-09-05
+* Created the Python Reinforcement Learning Environment wrapper (`env.py`) using Gymnasium.
+* Set up the Observation Space (9x9 matrix) and Action Space (6561 possible moves).
+* Added legal-action masking logic so the AI doesn't try impossible moves.
+
 ### — [Change log ver 0.3]
 **Date:** 2026-08-28
 * Added PyO3 bindings to bridge Khumba's Rust game logic with the Python AI environment.

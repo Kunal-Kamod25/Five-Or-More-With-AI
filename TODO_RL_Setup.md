@@ -5,11 +5,11 @@
   - [x] Expose `has_legal_move`, `find_path`, and `score_and_find_matched_pieces` to Python.
   - [x] Build the Rust library as a Python module.
 
-- [ ] Create Python RL Environment (`src/utils/env.py`)
-  - [ ] Define the Gym-style `__init__` (Observation Space and Action Space).
-  - [ ] Implement `reset()` to initialize an empty 9x9 board and spawn starting pieces.
-  - [ ] Implement `step(action)` to execute a move, clear lines, and assign rewards.
-  - [ ] Implement `action_masks()` to return a boolean array of valid actions for the current state.
+- [x] Create Python RL Environment (`src/utils/env.py`)
+  - [x] Define the Gym-style `__init__` (Observation Space and Action Space).
+  - [x] Implement `reset()` to initialize an empty 9x9 board and spawn starting pieces.
+  - [x] Implement `step(action)` to execute a move, clear lines, and assign rewards.
+  - [x] Implement `action_masks()` to return a boolean array of valid actions for the current state.
 
 - [ ] Setup Neural Network Models (`src/models/network.py`)
   - [ ] Build a Convolutional Neural Network (CNN) to process the 9x9 multi-channel board state.

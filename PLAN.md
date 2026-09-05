@@ -44,6 +44,7 @@ report's methodology section)
 | 2026-08-28 | RL environment uses Medium difficulty and seeded Rust RNG | Keeps the first API simple while enabling reproducible tests |
 | 2026-08-28 | Selected PyO3 for Rust-Python interop | Avoids rewriting game logic in Python while keeping performance high |
 | 2026-08-28 | Live matrix extraction via Bevy system | Safely dumps real-time state for RL observation without breaking graphics |
+| 2026-09-05 | Created base python RL environment (env.py) using Gymnasium | AI needs a standard Gym environment so PyTorch can easily interact with the game state and rules |
 
 ## Immediate Next Steps
 1. Choose the Python/Rust bridge approach before implementing the first RL algorithm.

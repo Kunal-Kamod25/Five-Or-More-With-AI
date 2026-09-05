@@ -93,10 +93,10 @@ class FiveOrMoreEnv(gym.Env):
         reward = 0.0 
 
         # Is the game over? (Did the board get completely full?)
-        done = false
+        done = False
 
         # Did the game run out of time? (Gymnasium requires this, we usually just say false).
-        truncated = false
+        truncated = False
 
         # 4. Return the results to the AI
         # We must return exactly this 5 things every time.
@@ -140,7 +140,7 @@ class FiveOrMoreEnv(gym.Env):
                 action_number = (start_square * 81) + end_square
 
                 # We flip the specific action false to true! 
-                valid_actions[action_nimber] = 1
+                valid_actions[action_number] = 1
 
         # we had this checklist of True / False to use AI.
         return valid_actions

@@ -16,7 +16,7 @@
   - [ ] Create Policy Head (outputs probabilities for the 6,561 actions).
   - [ ] Create Value Head (estimates the expected score of the current state).
 
-- [ ] Write Basic Training Loop (`src/training/train.py`)
+- [x] Write Basic Training Loop (`src/training/train.py`)
   - [ ] Setup masked PPO training loop.
   - [ ] Create data collection buffers for trajectories.
   - [ ] Implement loss functions and backpropagation.

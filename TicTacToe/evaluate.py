@@ -6,7 +6,7 @@ from environment import TicTacToeEnv
 from network import TicTacToeNetwork
 
 
-MODEL_PATH = "tictactoe/tictactoe_model.pth"
+MODEL_PATH = "tictactoe_model.pth"
 GAMES = 10000
 
 

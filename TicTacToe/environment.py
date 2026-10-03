@@ -9,10 +9,10 @@ class TicTacToeEnv:
 
     def reset(self):
         self.game.reset()
-        return self.game.board.copy()
+        return self.observation()
 
     def observation(self):
-        return self.game.board.copy()
+        return [1 if x == 1 else -1 if x == 2 else 0 for x in self.game.board]
 
     def legal_actions(self):
         return self.game.legal_actions()
@@ -30,7 +30,7 @@ class TicTacToeEnv:
 
         # AI's move resulted in a draw
         if self.game.is_draw():
-            return self.observation(), 0, True
+            return self.observation(), 0.5, True
 
         # Opponent (O) makes a random move
         self.opponent_move()

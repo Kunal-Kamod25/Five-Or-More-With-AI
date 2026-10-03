@@ -265,7 +265,8 @@ class TicTacToeGUI:
         if self.network is not None and TORCH_AVAILABLE:
             try:
                 # Convert current 1D board list into PyTorch tensor
-                state_tensor = torch.tensor(self.board, dtype=torch.float32)
+                obs = [1 if x == 1 else -1 if x == 2 else 0 for x in self.board]
+                state_tensor = torch.tensor(obs, dtype=torch.float32)
                 with torch.no_grad():
                     # Predict all 9 Q-values
                     q_values = self.network(state_tensor)

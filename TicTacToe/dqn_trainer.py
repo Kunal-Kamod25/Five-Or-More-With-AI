@@ -9,19 +9,20 @@ from dqn import select_action
 
 
 # Training settings
-GAMMA = 0.9
+GAMMA = 0.99
 LEARNING_RATE = 0.001
-BUFFER_SIZE = 10000
-BATCH_SIZE = 32
-EPISODES = 5000
+BUFFER_SIZE = 50000
+BATCH_SIZE = 128
+EPISODES = 100000
+TARGET_UPDATE_FREQ = 100
 
 # Exploration settings
 EPSILON_START = 1.0
-EPSILON_END = 0.1
-EPSILON_DECAY = 0.995
+EPSILON_END = 0.05
+EPSILON_DECAY = 0.9999
 
 
-def train_step(network, optimizer, buffer):
+def train_step(network, target_network, optimizer, buffer):
     # We cannot train until we have enough experiences
     if not buffer.can_sample(BATCH_SIZE):
         return None
@@ -57,7 +58,16 @@ def train_step(network, optimizer, buffer):
 
     # Calculate the target Q-values
     with torch.no_grad():
-        next_q_values = network(next_states).max(dim=1).values
+        next_q_preds = target_network(next_states)
+        
+        # Critical Fix: Mask out illegal actions!
+        # If we don't do this, the network might predict astronomically high values for illegal
+        # moves (which it never gets punished for), and the max() will pull those huge numbers
+        # back into our Q-values, causing the loss to explode to infinity.
+        illegal_mask = (next_states != 0)
+        next_q_preds[illegal_mask] = -1e9
+        
+        next_q_values = next_q_preds.max(dim=1).values
 
         target_q_values = (
             rewards
@@ -88,6 +98,9 @@ def train():
 
     # Create MLP
     network = TicTacToeNetwork()
+    target_network = TicTacToeNetwork()
+    target_network.load_state_dict(network.state_dict())
+    target_network.eval()
 
     # Create optimizer
     optimizer = optim.Adam(
@@ -137,6 +150,7 @@ def train():
             # Train the network
             loss = train_step(
                 network,
+                target_network,
                 optimizer,
                 buffer
             )
@@ -149,6 +163,10 @@ def train():
             # Stop when the game ends
             if done:
                 break
+        
+        # Update target network
+        if episode % TARGET_UPDATE_FREQ == 0:
+            target_network.load_state_dict(network.state_dict())
 
         # Reduce exploration
         epsilon = max(

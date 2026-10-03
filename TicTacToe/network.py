@@ -7,13 +7,13 @@ class TicTacToeNetwork(nn.Module):
         super().__init__()
 
         self.network = nn.Sequential(
-            nn.Linear(9, 64),
+            nn.Linear(9, 128),
             nn.ReLU(),
 
-            nn.Linear(64, 64),
+            nn.Linear(128, 128),
             nn.ReLU(),
 
-            nn.Linear(64, 9)
+            nn.Linear(128, 9)
         )
 
     def forward(self, state):

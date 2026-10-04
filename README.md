@@ -14,7 +14,12 @@
 ## 📅 PROJECT UPDATES / DEVELOPMENT LOG
 
 A chronological record of the development, experiments, challenges, and progress of the **Five or More with AI** project.
-
+### — [Change log ver 0.5]
+**Date:** 2026-10-05
+* We have ported the game from Rust+bevy to python+pygame.
+* Added path tracking for easier tracking of ball.
+* We have decided to implement DQN+CNN, any progress and update will be shared here.
+ 
 ### — [Change log ver 0.4]
 **Date:** 2026-09-05
 * Created the Python Reinforcement Learning Environment wrapper (`env.py`) using Gymnasium.

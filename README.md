@@ -6,7 +6,6 @@
 
 
 [![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
-[![Rust](https://img.shields.io/badge/Rust-000000?style=for-the-badge&logo=rust&logoColor=white)](https://www.rust-lang.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white)](https://pytorch.org/)
 [![NumPy](https://img.shields.io/badge/NumPy-013243?style=for-the-badge&logo=numpy&logoColor=white)](https://numpy.org/)
 
@@ -14,7 +13,12 @@
 ## 📅 PROJECT UPDATES / DEVELOPMENT LOG
 
 A chronological record of the development, experiments, challenges, and progress of the **Five or More with AI** project.
-
+### — [Change log ver 0.5]
+**Date:** 2026-10-05
+* We have ported the game from Rust+bevy to python+pygame.
+* Added path tracking for easier tracking of ball.
+* We have decided to implement DQN+CNN, any progress and update will be shared here.
+ 
 ### — [Change log ver 0.4]
 **Date:** 2026-09-05
 * Created the Python Reinforcement Learning Environment wrapper (`env.py`) using Gymnasium.

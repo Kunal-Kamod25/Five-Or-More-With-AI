@@ -111,35 +111,6 @@ The final state representation, action space, reward function, network architect
 
 ---
 
-## Project Structure
-
-```text
-Five-Or-More-With-AI/
-│
-├── game/
-│   ├── board.py
-│   ├── piece.py
-│   ├── board_pieces.py
-│   ├── spawner.py
-│   ├── movement.py
-│   ├── line_detector.py
-│   ├── scoring.py
-│   ├── match_resolver.py
-│   ├── game_over.py
-│   ├── game.py
-│   ├── state.py
-│   ├── renderer.py
-│   ├── input_controller.py
-│   └── main.py
-│
-├── data/
-├── docs/
-├── experiments/
-└── README.md
-```
-
----
-
 ## Development Log
 
 ### Version 0.5 — 2026-10-05

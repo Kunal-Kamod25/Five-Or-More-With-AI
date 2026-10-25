@@ -1,0 +1,37 @@
+{
+  "training": {
+    "episodes": 10000,
+    "max_steps_per_episode": 500,
+    "seed": 42
+  },
+  "dqn": {
+    "learning_rate": 0.001,
+    "gamma": 0.99,
+    "batch_size": 64,
+    "replay_buffer_size": 100000,
+    "target_update_frequency": 1000
+  },
+  "exploration": {
+    "epsilon_start": 1.0,
+    "epsilon_min": 0.05,
+    "epsilon_decay": 0.995
+  },
+  "network": {
+    "type": "CNN",
+    "hidden_layers": [128, 128],
+    "cnn": {
+      "channels": [16, 32],
+      "kernel_size": 3,
+      "padding": 1
+    }
+  },
+  "environment": {
+    "difficulty": "Medium"
+  },
+  "reward": {
+    "invalid_action": -1.0,
+    "score_per_point": 0.1,
+    "step_penalty": 0.01,
+    "game_over_penalty": 1.0
+  }
+}

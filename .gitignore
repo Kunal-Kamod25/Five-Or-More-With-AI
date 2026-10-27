@@ -14,9 +14,10 @@ env/
 data/raw/*
 data/processed/*
 !data/raw/.gitkeep
-!data/processed/.gitkeep
 experiments/*
 !experiments/.gitkeep
+data/experiments/*
+!data/experiments/.gitkeep
 *.pth
 *.pt
 *.ckpt

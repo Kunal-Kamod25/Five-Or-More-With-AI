@@ -128,7 +128,7 @@ class ExperimentManagerTests(unittest.TestCase):
             config["training"]["episodes"] = 999
 
             snapshot = json.loads(manager.config_path.read_text(encoding="utf-8"))
-            self.assertEqual(snapshot["training"]["episodes"], 10000)
+            self.assertEqual(snapshot["training"]["episodes"], self.base_config["training"]["episodes"])
             self.assertNotEqual(snapshot["training"]["episodes"], config["training"]["episodes"])
 
     def test_results_can_be_saved(self):

@@ -34,6 +34,7 @@ def train_dqn(
     experiment_manager: Any | None = None,
     experiment_dir: str | Path | None = None,
     device: torch.device | str | None = None,
+    verbose: bool = False,
 ) -> dict[str, Any]:
     """Train for the configured episode count and persist metrics/checkpoint."""
     config = load_config() if config is None else validate_config(config)
@@ -164,6 +165,21 @@ def train_dqn(
                 average_score=mean(scores),
                 average_reward=mean(rewards),
             )
+            if verbose:
+                loss_display = (
+                    f"{mean(episode_losses):.4f}"
+                    if episode_losses
+                    else "N/A (buffer filling)"
+                )
+                print(
+                    f"Episode {episode_number:4d}/{episodes} | "
+                    f"Steps: {episode_steps:3d} | "
+                    f"Score: {score:4.0f} | "
+                    f"Reward: {total_reward:6.2f} | "
+                    f"Avg Reward: {mean(rewards):6.2f} | "
+                    f"Loss: {loss_display} | "
+                    f"Epsilon: {episode_epsilon:.4f}"
+                )
     finally:
         random.setstate(previous_random_state)
 
@@ -221,6 +237,11 @@ def main() -> None:
         default=None,
         help="optional base directory for experiment runs",
     )
+    parser.add_argument(
+        "--quiet",
+        action="store_true",
+        help="suppress live per-episode progress output",
+    )
     arguments = parser.parse_args()
     config = load_config()
     if arguments.episodes is not None:
@@ -230,6 +251,7 @@ def main() -> None:
         config,
         device=arguments.device,
         experiment_dir=arguments.experiment_dir,
+        verbose=not arguments.quiet,
     )
     print(summary)
 

@@ -54,6 +54,7 @@ class DQNAgent:
             else ExperienceReplayBuffer(
                 capacity=dqn_config["replay_buffer_size"],
                 seed=self.config["training"].get("seed"),
+                deduplicate=bool(dqn_config.get("deduplicate_transitions", True)),
             )
         )
         if not isinstance(self.replay_buffer, ExperienceReplayBuffer):
@@ -75,11 +76,18 @@ class DQNAgent:
         state: Any,
         legal_actions: Sequence[int],
         epsilon: float | None = None,
+        avoid_actions: Sequence[int] | None = None,
     ) -> int | None:
-        """Choose randomly or greedily from the supplied legal actions."""
+        """Choose randomly or greedily from the supplied legal actions, avoiding cycle actions if alternatives exist."""
         actions = list(legal_actions)
         if not actions:
             return None
+
+        if avoid_actions:
+            avoid_set = set(avoid_actions)
+            non_avoid = [a for a in actions if a not in avoid_set]
+            if non_avoid:
+                actions = non_avoid
 
         exploration_rate = self.epsilon if epsilon is None else epsilon
         if (

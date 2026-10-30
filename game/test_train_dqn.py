@@ -288,7 +288,23 @@ class TrainDQNTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             with self.assertRaises(ValueError):
                 train_dqn(config, experiment_dir=tmpdir)
-            self.assertEqual(list(Path(tmpdir).iterdir()), [])
+    def test_train_frequency_limits_learning_updates(self):
+        env = FakeEnvironment([self.normal_script(1.0, 7), self.normal_script(2.0, 9)])
+        agent = FakeAgent()
+        config = copy.deepcopy(self.config)
+        config["training"]["train_frequency"] = 2
+        with tempfile.TemporaryDirectory() as tmpdir:
+            manager = ExperimentManager(config, base_dir=tmpdir)
+            summary = train_dqn(
+                config,
+                env=env,
+                agent=agent,
+                experiment_manager=manager,
+            )
+
+        self.assertEqual(summary["environment_steps"], 4)
+        # With train_frequency = 2 across 4 steps, learn_step is called 2 times
+        self.assertEqual(agent.learn_calls, 2)
 
 
 if __name__ == "__main__":

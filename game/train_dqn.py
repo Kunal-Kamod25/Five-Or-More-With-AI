@@ -44,6 +44,12 @@ def train_dqn(
     max_steps_per_episode = training_config["max_steps_per_episode"]
     seed = training_config.get("seed")
 
+    torch_threads = training_config.get("torch_threads")
+    if torch_threads is not None:
+        torch.set_num_threads(int(torch_threads))
+
+    train_frequency = int(training_config.get("train_frequency", 1))
+
     if env is None:
         env = FiveOrMoreEnv(difficulty=config["environment"]["difficulty"])
     if agent is None:
@@ -84,6 +90,8 @@ def train_dqn(
             episode_losses: list[float] = []
             done = False
             stop_reason = "max_steps"
+            last_action: int | None = None
+            last_reward: float = 0.0
 
             while episode_steps < max_steps_per_episode:
                 legal_actions = env.get_valid_actions()
@@ -97,7 +105,23 @@ def train_dqn(
                     epsilon_decay,
                     environment_steps,
                 )
-                action = agent.select_action(state, legal_actions, epsilon=epsilon)
+
+                avoid_actions = []
+                if last_action is not None and last_reward <= 0.0:
+                    src_idx, dst_idx = divmod(int(last_action), 81)
+                    reverse_action = dst_idx * 81 + src_idx
+                    avoid_actions.append(reverse_action)
+
+                try:
+                    action = agent.select_action(
+                        state,
+                        legal_actions,
+                        epsilon=epsilon,
+                        avoid_actions=avoid_actions if avoid_actions else None,
+                    )
+                except TypeError:
+                    action = agent.select_action(state, legal_actions, epsilon=epsilon)
+
                 if action is None:
                     stop_reason = "no_legal_actions"
                     break
@@ -117,11 +141,16 @@ def train_dqn(
                     next_legal_actions=next_legal_actions,
                 )
 
-                update_result = agent.learn_step()
                 environment_steps += 1
                 episode_steps += 1
                 total_reward += float(reward)
                 final_done = bool(done)
+                last_action = action
+                last_reward = float(reward)
+
+                update_result = {"updated": False, "loss": None}
+                if environment_steps % train_frequency == 0:
+                    update_result = agent.learn_step()
 
                 if update_result["updated"]:
                     optimizer_updates += 1

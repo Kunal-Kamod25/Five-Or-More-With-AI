@@ -80,6 +80,10 @@ def validate_config(config: dict[str, Any], path: Path | str | None = None) -> d
     )
     if "seed" in training and (not isinstance(training["seed"], int) or isinstance(training["seed"], bool)):
         raise ConfigError(f"'training.seed' in {config_path} must be an integer.")
+    if "train_frequency" in training:
+        _validate_positive_int(training["train_frequency"], "training.train_frequency", config_path)
+    if "torch_threads" in training:
+        _validate_positive_int(training["torch_threads"], "training.torch_threads", config_path)
 
     dqn = config["dqn"]
     _validate_positive_number(dqn.get("learning_rate"), "dqn.learning_rate", config_path)

@@ -2,14 +2,17 @@
   "training": {
     "episodes": 200000,
     "max_steps_per_episode": 500,
-    "seed": 42
+    "seed": 42,
+    "train_frequency": 1,
+    "torch_threads": 12
   },
   "dqn": {
     "learning_rate": 0.00025,
     "gamma": 0.99,
     "batch_size": 64,
     "replay_buffer_size": 100000,
-    "target_update_frequency": 1000
+    "target_update_frequency": 1000,
+    "deduplicate_transitions": true
   },
   "exploration": {
     "epsilon_start": 1.0,

@@ -156,8 +156,6 @@ class LegalActionQNetwork(nn.Module):
         if not legal_actions:
             return torch.empty(0, dtype=torch.float32)
 
-        feature_maps, board_summary = self._forward_features(state)
-        scores = []
         for action in legal_actions:
             if isinstance(action, bool) or not isinstance(action, Integral):
                 raise TypeError("all actions must be integers.")
@@ -168,10 +166,30 @@ class LegalActionQNetwork(nn.Module):
                         FiveOrMoreEnv.ACTION_COUNT - 1
                     )
                 )
-            combined = self._action_feature_vector(feature_maps, board_summary, action)
-            scores.append(self.action_scorer(combined.unsqueeze(0)).squeeze(0))
 
-        return torch.stack(scores)
+        feature_maps, board_summary = self._forward_features(state)
+        device = feature_maps.device
+        actions_tensor = torch.as_tensor(legal_actions, dtype=torch.long, device=device)
+
+        source_indices = actions_tensor // 81
+        destination_indices = actions_tensor % 81
+        source_y = source_indices // Board.SIZE
+        source_x = source_indices % Board.SIZE
+        destination_y = destination_indices // Board.SIZE
+        destination_x = destination_indices % Board.SIZE
+
+        feature_maps_spatial = feature_maps[0].permute(1, 2, 0)
+        source_features = feature_maps_spatial[source_y, source_x]
+        destination_features = feature_maps_spatial[destination_y, destination_x]
+
+        board_summary_vector = board_summary[0] if board_summary.dim() > 1 else board_summary
+        summary_expanded = board_summary_vector.unsqueeze(0).expand(len(legal_actions), -1)
+
+        combined = torch.cat(
+            [source_features, destination_features, summary_expanded],
+            dim=1,
+        )
+        return self.action_scorer(combined)
 
     def select_best_action(self, state, actions):
         """Return the highest-scoring legal action and its estimated value."""

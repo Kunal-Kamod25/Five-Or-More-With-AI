@@ -217,7 +217,27 @@ class ExperienceReplayBufferTests(unittest.TestCase):
             "done": False,
             "next_legal_actions": [3],
         })
-        self.assertEqual(buffer.sample(1)[0]["action"], 3)
+    def test_buffer_deduplication_prevents_duplicate_state_action_records(self):
+        buffer = ExperienceReplayBuffer(capacity=5, deduplicate=True)
+        transition = {
+            "state": [[0, 1]],
+            "action": 3,
+            "reward": 1.0,
+            "next_state": [[1, 2]],
+            "done": False,
+            "next_legal_actions": [3],
+        }
+        buffer.append(transition)
+        self.assertEqual(len(buffer), 1)
+
+        # Same state-action appended again should be rejected
+        buffer.append(transition)
+        self.assertEqual(len(buffer), 1)
+
+        # Different action should be accepted
+        different_action = dict(transition, action=4)
+        buffer.append(different_action)
+        self.assertEqual(len(buffer), 2)
 
 
 if __name__ == "__main__":

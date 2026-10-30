@@ -84,6 +84,8 @@ def validate_config(config: dict[str, Any], path: Path | str | None = None) -> d
         _validate_positive_int(training["train_frequency"], "training.train_frequency", config_path)
     if "torch_threads" in training:
         _validate_positive_int(training["torch_threads"], "training.torch_threads", config_path)
+    if "num_workers" in training:
+        _validate_positive_int(training["num_workers"], "training.num_workers", config_path)
 
     dqn = config["dqn"]
     _validate_positive_number(dqn.get("learning_rate"), "dqn.learning_rate", config_path)

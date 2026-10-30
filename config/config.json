@@ -4,7 +4,8 @@
     "max_steps_per_episode": 500,
     "seed": 42,
     "train_frequency": 1,
-    "torch_threads": 12
+    "torch_threads": 4,
+    "num_workers": 8
   },
   "dqn": {
     "learning_rate": 0.00025,

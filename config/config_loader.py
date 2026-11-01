@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from game.game import Game
+from game.core.game import Game
 
 DEFAULT_CONFIG_PATH = Path(__file__).resolve().parent / "config.json"
 REQUIRED_SECTIONS = (
@@ -86,6 +86,18 @@ def validate_config(config: dict[str, Any], path: Path | str | None = None) -> d
         _validate_positive_int(training["torch_threads"], "training.torch_threads", config_path)
     if "num_workers" in training:
         _validate_positive_int(training["num_workers"], "training.num_workers", config_path)
+    if "evaluation_interval" in training:
+        interval = training["evaluation_interval"]
+        if not isinstance(interval, int) or isinstance(interval, bool) or interval < 0:
+            raise ConfigError(
+                f"'training.evaluation_interval' in {config_path} must be a non-negative integer."
+            )
+    if "evaluation_episodes" in training:
+        _validate_positive_int(
+            training["evaluation_episodes"],
+            "training.evaluation_episodes",
+            config_path,
+        )
 
     dqn = config["dqn"]
     _validate_positive_number(dqn.get("learning_rate"), "dqn.learning_rate", config_path)

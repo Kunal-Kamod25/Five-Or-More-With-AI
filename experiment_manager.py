@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 import json
 from copy import deepcopy
 from datetime import datetime, timezone
@@ -32,6 +33,11 @@ class ExperimentManager:
         self.results_path = self.run_dir / "results.json"
         self.metrics_path = self.run_dir / "metrics.csv"
         self.model_path = self.run_dir / "model.pth"
+        self.best_model_path = self.run_dir / "best_model.pth"
+        self.evaluations_path = self.run_dir / "evaluations.jsonl"
+        self.config_hash = hashlib.sha256(
+            json.dumps(self.config, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        ).hexdigest()
 
         self._write_config_snapshot()
         self.results = self._initial_results()
@@ -75,7 +81,9 @@ class ExperimentManager:
             "average_episode_length": None,
             "final_epsilon": None,
             "average_loss": None,
+            "config_hash": self.config_hash,
             "model_path": str(self.model_path),
+            "best_model_path": str(self.best_model_path),
             "config_snapshot": str(self.config_path),
         }
 
@@ -85,7 +93,9 @@ class ExperimentManager:
         results.setdefault("timestamp", self._timestamp())
         results.setdefault("start_time", results["timestamp"])
         results.setdefault("config_snapshot", str(self.config_path))
+        results.setdefault("config_hash", self.config_hash)
         results.setdefault("model_path", str(self.model_path))
+        results.setdefault("best_model_path", str(self.best_model_path))
         with self.results_path.open("w", encoding="utf-8") as handle:
             json.dump(results, handle, indent=2, sort_keys=True)
             handle.write("\n")
@@ -100,7 +110,9 @@ class ExperimentManager:
         results.setdefault("start_time", results["timestamp"])
         results.setdefault("status", "completed")
         results.setdefault("config_snapshot", str(self.config_path))
+        results.setdefault("config_hash", self.config_hash)
         results.setdefault("model_path", str(self.model_path))
+        results.setdefault("best_model_path", str(self.best_model_path))
         self._write_results(results)
         return self.results
 
@@ -115,6 +127,8 @@ class ExperimentManager:
             "loss",
             "average_score",
             "average_reward",
+            "truncated",
+            "stop_reason",
         ]
         if not self.metrics_path.exists() or self.metrics_path.stat().st_size == 0:
             with self.metrics_path.open("w", encoding="utf-8", newline="") as handle:
@@ -133,6 +147,8 @@ class ExperimentManager:
         loss: float | None = None,
         average_score: float | None = None,
         average_reward: float | None = None,
+        truncated: bool = False,
+        stop_reason: str | None = None,
     ) -> dict[str, Any]:
         """Append one episode record to metrics.csv."""
         if not isinstance(episode, int) or isinstance(episode, bool) or episode <= 0:
@@ -150,6 +166,8 @@ class ExperimentManager:
             "loss": loss,
             "average_score": average_score,
             "average_reward": average_reward,
+            "truncated": bool(truncated),
+            "stop_reason": stop_reason,
         }
         self._ensure_metrics_header()
         with self.metrics_path.open("a", encoding="utf-8", newline="") as handle:
@@ -165,6 +183,8 @@ class ExperimentManager:
                     "loss",
                     "average_score",
                     "average_reward",
+                    "truncated",
+                    "stop_reason",
                 ],
             )
             writer.writerow(row)
@@ -172,6 +192,18 @@ class ExperimentManager:
         self.results["episodes"] = max(int(self.results.get("episodes", 0)), int(episode))
         self.results["status"] = "running"
         self._write_results(self.results)
+        return row
+
+    def log_evaluation(self, **metrics: Any) -> dict[str, Any]:
+        """Append evaluation and baseline metrics to the run's JSONL history."""
+        row = {
+            "timestamp": self._timestamp(),
+            "run_id": self.run_id,
+            "config_hash": self.config_hash,
+            **metrics,
+        }
+        with self.evaluations_path.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(row, sort_keys=True) + "\n")
         return row
 
     def record_metrics(self, **kwargs: Any) -> dict[str, Any]:

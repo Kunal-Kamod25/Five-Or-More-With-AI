@@ -1,0 +1,168 @@
+How a CNN Understands the 7-Channel Game State
+==================================================
+
+A useful way to picture it is: the 7 channels are the CNN's input features; the CNN turns local board patterns into learned features; a final head turns those features into Q-values. The DQN still chooses an action by comparing Q-values, and backpropagation still adjusts weights to make its chosen Q-value closer to its target.
+
+
+1. What the 7 channels represent
+==================================================
+
+Your environment represents a cell using an integer from 0 to 7: 0 means empty, and 1-7 identify piece colors. A CNN usually works better with those colors represented as separate binary channels.
+
+For each board cell, make a 7-element vector:
+
+- Red piece: [1, 0, 0, 0, 0, 0, 0]
+- Second color: [0, 1, 0, 0, 0, 0, 0]
+- ...
+- Seventh color: [0, 0, 0, 0, 0, 0, 1]
+- Empty cell: [0, 0, 0, 0, 0, 0, 0]
+
+So one board becomes a tensor shaped:
+
+    7 channels x 9 rows x 9 columns
+
+With a batch of 32 boards, the shape is:
+
+    32 x 7 x 9 x 9
+
+The 7 in that shape means input features per location, not seven neurons or seven colors the CNN must produce.
+
+In config/config.json, "channels": [32, 64] refers to the CNN's learned output feature maps: 32 in the first convolutional layer, then 64 in the next.
+
+
+2. What one convolutional neuron receives
+==================================================
+
+Suppose the first convolution uses a 3 x 3 kernel. At one particular board location, one convolutional neuron looks at a small 3 x 3 neighborhood across all 7 input channels:
+
+    7 channels x 3 rows x 3 columns = 63 input values
+
+It computes a weighted sum plus a bias, just like an MLP neuron:
+
+    z = sum over c, i, j of (w[c,i,j] * x[c,i,j]) + b
+
+Then it applies an activation, commonly ReLU:
+
+    y = max(0, z)
+
+So the "weighted sum + bias + ReLU" you already understand is still happening. The difference is which inputs are connected to the neuron.
+
+- In an MLP, a neuron might connect to every input in the entire board.
+- In this convolution, a neuron connects to a local 3 x 3 area, across all colors.
+
+Each filter is slid across the board. The result at every location is that filter's feature map. One feature map might learn to respond to a particular local arrangement of colors or gaps - not because it was programmed to do that, but because training changes its weights.
+
+
+3. What makes convolution different from an MLP
+==================================================
+
+The key idea is weight sharing.
+
+The same filter weights are reused at every board location. A filter that learns to detect a pattern near the top-left can also detect that pattern near the center or bottom-right.
+
+For a first layer with 32 filters:
+
+- Each filter has 7 x 3 x 3 = 63 weights, plus a bias.
+- It is applied at all board positions.
+- If padding preserves the 9 x 9 board size, each filter produces a 9 x 9 feature map.
+- The layer's output is then 32 x 9 x 9.
+
+A second convolution might take those 32 maps as input and produce 64 maps. With another 3 x 3 kernel, a single output neuron uses:
+
+    32 channels x 3 x 3 positions = 288 input values
+
+Again, it does a weighted sum, adds a bias, and applies an activation.
+
+The config lists kernel size and channel counts, but details such as padding and the final Q-value head still need to be chosen when the CNN is implemented.
+
+
+4. How it can learn bigger patterns
+==================================================
+
+The first layer sees small neighborhoods. Later layers combine the first layer's features, so their effective view of the original board grows.
+
+You can think of the process as:
+
+    board colors
+      -> small local patterns
+      -> combinations of local patterns
+      -> larger board patterns
+      -> Q-values for actions
+
+For example, the CNN may learn useful features for matching colors or recognizing crowded areas. It does not automatically understand game rules, legal paths, or what "a good move" means. Those things must come from the environment, action handling, and training rewards.
+
+A CNN is especially useful when the same pattern matters wherever it appears. One limitation is that local convolutions do not immediately see the whole board; the architecture must combine information across enough layers or use a suitable head.
+
+
+5. How the CNN produces Q-values
+==================================================
+
+The convolutional layers produce learned board features. Those features then need to be turned into a value for each possible action.
+
+One straightforward design would be:
+
+    7 x 9 x 9 board
+      -> convolutional layers
+      -> flatten or pool the feature maps
+      -> dense layers
+      -> one Q-value per action
+
+The game's source-to-destination action encoding has 81 x 81 = 6561 possible encoded actions, although most are illegal in any particular board. A simple DQN head could therefore output 6561 Q-values, one for each encoded action.
+
+The head can still use ordinary MLP neurons. For example, flattening 64 x 9 x 9 gives 5184 numbers; a dense layer then sums weighted inputs, adds biases, and applies ReLU. The final layer outputs Q-values. The exact head design is a future architecture decision; the current config does not implement or settle it.
+
+For choosing an action, the agent should compare Q-values only for currently legal actions:
+
+    a = argmax over legal actions of Q(s, a)
+
+That avoids selecting an illegal move just because its output happened to be numerically high.
+
+
+6. What happens during DQN training
+==================================================
+
+For one transition, the agent has:
+
+    state s
+    action a
+    reward r
+    next state s'
+    done flag
+
+The online CNN estimates the Q-value for the action it actually took:
+
+    Q_online(s, a)
+
+A target network estimates the best available value in the next state. The maximization should be restricted to legal next actions:
+
+    y = r + gamma * (1 - done) * max over legal next actions a' of Q_target(s', a')
+
+The DQN measures the difference between the estimate and target, often with a squared or Huber loss:
+
+    loss = Huber(Q_online(s, a), y)
+
+Then backpropagation works through the Q-value head and the CNN:
+
+1. The loss indicates how far the selected action's Q-value is from its target.
+2. Gradients flow from that Q-value through the dense layers and convolutional layers.
+3. The optimizer adjusts the weights and biases to reduce the loss.
+4. In convolution layers, the same filter weight was reused at many board positions, so gradient contributions from those positions accumulate for that shared weight.
+
+So it is still the learning process you know from an MLP. The CNN changes the input connections and shares filter weights across board locations; the DQN target, loss, optimizer, and backpropagation idea remain.
+
+
+7. Where epsilon-greedy fits
+==================================================
+
+At action-selection time, epsilon-greedy still works as before:
+
+- With probability epsilon, choose a random legal action.
+- Otherwise, choose the legal action with the highest predicted Q-value.
+
+The CNN supplies the Q-values; epsilon-greedy determines whether to use the best predicted move or explore.
+
+
+In one sentence
+==================================================
+
+The 7-channel board tells the CNN what colors occupy each cell, convolutional neurons detect and combine spatial patterns using weighted sums, biases, and activations, and a final Q-value head lets DQN rank legal moves and train those weights through backpropagation.

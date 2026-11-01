@@ -77,15 +77,13 @@ The board is represented as a **9×9 matrix** using:
 | 6 | Cyan |
 | 7 | Orange |
 
-This representation will later be used as the input state for the reinforcement learning environment.
+This representation is used as input to the reinforcement-learning environment.
 
 ---
 
 ## Reinforcement Learning
 
-The reinforcement learning phase is the next stage of development.
-
-The current research direction is **CNN + DQN**.
+The project includes a CNN + DQN training pipeline.
 
 ```text
 Game State
@@ -107,7 +105,56 @@ Reward
 Next State
 ```
 
-The final state representation, action space, reward function, network architecture, and training procedure will be defined during the RL phase.
+The implementation includes legal-action filtering, configurable rewards, replay and target networks, parallel environment workers, and an evaluation runner.
+
+---
+
+## Project Layout
+
+```text
+game/
+  core/   Board, movement, scoring, and game rules
+  ui/     Pygame application and input/rendering
+  rl/     Environment, DQN agent, evaluation, and training
+config/   Runtime and training configuration
+tests/    Tests grouped by core, UI, and RL domain
+docs/     Project explanations and architecture documentation
+```
+
+Run the game and training with:
+
+```powershell
+python -m game.ui.main
+python -m game.rl.train_dqn
+```
+
+Training periodically evaluates the greedy agent against random legal play on
+the same seeded games. Each run stores its exact config, config hash, episode
+metrics, and evaluation history under `data/experiments/run_NNN/`. The latest
+checkpoint is `model.pth`; the highest evaluation-average checkpoint is
+`best_model.pth`.
+
+Compare runs after changing `config/config.json`, evaluate a checkpoint, or
+watch the best saved agent play:
+
+```powershell
+python -m game.rl.compare_experiments
+python -m game.rl.evaluate_agent --episodes 100
+python -m game.rl.play_agent
+```
+
+In the AI playback window, **Space** pauses, **R** restarts, and **Escape**
+quits. Set `training.evaluation_interval` to `0` to disable periodic
+evaluation, or adjust `training.evaluation_episodes` to change benchmark size.
+
+Run the test suite with:
+
+```powershell
+python -m unittest discover -s tests
+```
+
+The previous `python -m game.main` and `python -m game.train_dqn` launch commands remain supported.
+Architecture notes are in [docs/architecture/ARCHITECTURE_WORKFLOW.md](docs/architecture/ARCHITECTURE_WORKFLOW.md).
 
 ---
 

@@ -7,7 +7,8 @@
     "torch_threads": 4,
     "num_workers": 8,
     "evaluation_interval": 5000,
-    "evaluation_episodes": 25
+    "evaluation_episodes": 25,
+    "surveillance_interval": 100
   },
   "dqn": {
     "learning_rate": 0.00025,
@@ -36,8 +37,15 @@
   },
   "reward": {
     "invalid_action": -1.0,
-    "score_per_point": 0.1,
-    "step_penalty": 0.01,
-    "game_over_penalty": 1.0
+    "score_per_point": 1.0,
+    "step_penalty": 0.001,
+    "game_over_penalty": 1.0,
+    "line_rewards": {
+      "5": 10.0,
+      "6": 12.0,
+      "7": 14.0,
+      "8": 16.0,
+      "9": 18.0
+    }
   }
 }

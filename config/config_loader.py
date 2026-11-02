@@ -98,6 +98,12 @@ def validate_config(config: dict[str, Any], path: Path | str | None = None) -> d
             "training.evaluation_episodes",
             config_path,
         )
+    if "surveillance_interval" in training:
+        _validate_positive_int(
+            training["surveillance_interval"],
+            "training.surveillance_interval",
+            config_path,
+        )
 
     dqn = config["dqn"]
     _validate_positive_number(dqn.get("learning_rate"), "dqn.learning_rate", config_path)
@@ -166,6 +172,22 @@ def validate_config(config: dict[str, Any], path: Path | str | None = None) -> d
     _validate_positive_number(reward.get("score_per_point"), "reward.score_per_point", config_path)
     _validate_non_negative_number(reward.get("step_penalty"), "reward.step_penalty", config_path)
     _validate_positive_number(reward.get("game_over_penalty"), "reward.game_over_penalty", config_path)
+    if "line_rewards" in reward and reward["line_rewards"] is not None:
+        line_rewards = reward["line_rewards"]
+        if not isinstance(line_rewards, dict):
+            raise ConfigError(f"'reward.line_rewards' in {config_path} must be a JSON object.")
+        for length_key, reward_val in line_rewards.items():
+            try:
+                length_int = int(length_key)
+            except (ValueError, TypeError):
+                raise ConfigError(
+                    f"'reward.line_rewards' keys in {config_path} must be line length integers."
+                )
+            if not 5 <= length_int <= 9:
+                raise ConfigError(
+                    f"'reward.line_rewards' line length '{length_key}' in {config_path} must be between 5 and 9."
+                )
+            _validate_positive_number(reward_val, f"reward.line_rewards[{length_key}]", config_path)
 
     return config
 

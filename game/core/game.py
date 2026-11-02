@@ -18,13 +18,15 @@ class Game:
         "Hard": 3,
     }
 
-    def __init__(self, difficulty="Medium"):
+    def __init__(self, difficulty="Medium", score_calculator=None):
         self.board = Board()
         self.board_pieces = BoardPieces(self.board)
         self.spawner = PieceSpawner(self.board_pieces)
         self.piece_mover = PieceMover(self.board_pieces)
         self.line_detector = LineDetector(self.board_pieces)
-        self.score_calculator = ScoreCalculator()
+        self.score_calculator = (
+            score_calculator if score_calculator is not None else ScoreCalculator()
+        )
         self.match_resolver = MatchResolver(
             self.board_pieces,
             self.line_detector,

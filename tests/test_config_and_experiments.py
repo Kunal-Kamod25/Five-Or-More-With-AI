@@ -82,6 +82,12 @@ class ConfigLoaderTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "difficulty"):
             validate_config(config)
 
+    def test_invalid_line_rewards_is_detected(self):
+        config = json.loads(json.dumps(self.default_config))
+        config["reward"]["line_rewards"]["4"] = 10.0
+        with self.assertRaisesRegex(ValueError, "line length"):
+            validate_config(config)
+
 
 class ExperimentManagerTests(unittest.TestCase):
     def setUp(self):

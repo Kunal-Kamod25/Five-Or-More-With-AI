@@ -431,6 +431,42 @@ class TrainDQNTests(unittest.TestCase):
             self.assertEqual(summary["episodes"], 2)
             self.assertEqual(summary["episode_stop_reasons"], ["max_steps", "max_steps"])
 
+    def test_cli_parser_and_overrides(self):
+        parser = train_module.build_parser()
+        args = parser.parse_args([
+            "--episodes", "50",
+            "--lr", "0.0005",
+            "--gamma", "0.95",
+            "--batch-size", "128",
+            "--train-freq", "4",
+            "--workers", "4",
+            "--target-update", "2000",
+            "--step-penalty", "0.005",
+            "--score-per-point", "2.0",
+            "--difficulty", "Hard",
+            "--surveillance-interval", "25",
+            "--eval-interval", "10",
+            "--eval-episodes", "5",
+            "--epsilon-decay", "0.9999",
+        ])
+        config = copy.deepcopy(self.config)
+        modified = train_module.apply_cli_overrides(config, args)
+
+        self.assertEqual(modified["training"]["episodes"], 50)
+        self.assertEqual(modified["dqn"]["learning_rate"], 0.0005)
+        self.assertEqual(modified["dqn"]["gamma"], 0.95)
+        self.assertEqual(modified["dqn"]["batch_size"], 128)
+        self.assertEqual(modified["training"]["train_frequency"], 4)
+        self.assertEqual(modified["training"]["num_workers"], 4)
+        self.assertEqual(modified["dqn"]["target_update_frequency"], 2000)
+        self.assertEqual(modified["reward"]["step_penalty"], 0.005)
+        self.assertEqual(modified["reward"]["score_per_point"], 2.0)
+        self.assertEqual(modified["environment"]["difficulty"], "Hard")
+        self.assertEqual(modified["training"]["surveillance_interval"], 25)
+        self.assertEqual(modified["training"]["evaluation_interval"], 10)
+        self.assertEqual(modified["training"]["evaluation_episodes"], 5)
+        self.assertEqual(modified["exploration"]["epsilon_decay"], 0.9999)
+
 
 if __name__ == "__main__":
     unittest.main()

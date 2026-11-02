@@ -16,6 +16,7 @@ from .dqn_agent import DQNAgent
 from .evaluate_agent import evaluate_policy
 from .parallel_env import ParallelEnvManager
 from .rl_environment import FiveOrMoreEnv
+from .surveillance import TrainingSurveillance
 
 
 def epsilon_after_steps(
@@ -120,6 +121,7 @@ def train_dqn(
     experiment_dir: str | Path | None = None,
     device: torch.device | str | None = None,
     verbose: bool = False,
+    surveillance_interval: int | None = None,
 ) -> dict[str, Any]:
     """Train for the configured episode count and persist metrics/checkpoint."""
     config = load_config() if config is None else validate_config(config)
@@ -146,6 +148,7 @@ def train_dqn(
             experiment_dir=experiment_dir,
             device=device,
             verbose=verbose,
+            surveillance_interval=surveillance_interval,
         )
 
     if env is None:
@@ -156,6 +159,7 @@ def train_dqn(
             score_per_point=reward_config["score_per_point"],
             step_penalty=reward_config["step_penalty"],
             game_over_penalty=reward_config["game_over_penalty"],
+            line_rewards=reward_config.get("line_rewards"),
         )
     if agent is None:
         agent = DQNAgent(config, device=device)
@@ -173,6 +177,18 @@ def train_dqn(
     )
     best_evaluation_score = float("-inf")
     best_evaluation: dict[str, Any] | None = None
+
+    surv_interval = (
+        int(surveillance_interval)
+        if surveillance_interval is not None
+        else int(training_config.get("surveillance_interval", 100))
+    )
+    surveillance = TrainingSurveillance(
+        total_episodes=episodes,
+        interval=surv_interval,
+        experiment_manager=experiment_manager,
+        verbose=verbose,
+    )
 
     epsilon_start = float(exploration_config["epsilon_start"])
     epsilon_min = float(exploration_config["epsilon_min"])
@@ -313,6 +329,15 @@ def train_dqn(
                 truncated=stop_reason == "max_steps",
                 stop_reason=stop_reason,
             )
+            surveillance.record_episode(
+                episode=episode_number,
+                steps=episode_steps,
+                score=score,
+                reward=total_reward,
+                loss=mean(episode_losses) if episode_losses else None,
+                epsilon=episode_epsilon,
+                environment_steps=environment_steps,
+            )
             if verbose:
                 loss_display = (
                     f"{mean(episode_losses):.4f}"
@@ -368,6 +393,7 @@ def train_dqn(
         "final_done": final_done,
         "episode_stop_reasons": episode_stop_reasons,
         "model_path": str(experiment_manager.model_path),
+        "surveillance": surveillance.history[-1] if surveillance.history else None,
     }
 
     torch.save(
@@ -400,6 +426,7 @@ def _train_dqn_parallel(
     experiment_dir: str | Path | None = None,
     device: torch.device | str | None = None,
     verbose: bool = False,
+    surveillance_interval: int | None = None,
 ) -> dict[str, Any]:
     """Train using parallel environment worker processes across CPU cores."""
     training_config = config["training"]
@@ -427,6 +454,18 @@ def _train_dqn_parallel(
     )
     best_evaluation_score = float("-inf")
     best_evaluation: dict[str, Any] | None = None
+
+    surv_interval = (
+        int(surveillance_interval)
+        if surveillance_interval is not None
+        else int(training_config.get("surveillance_interval", 100))
+    )
+    surveillance = TrainingSurveillance(
+        total_episodes=episodes,
+        interval=surv_interval,
+        experiment_manager=experiment_manager,
+        verbose=verbose,
+    )
 
     epsilon_start = float(exploration_config["epsilon_start"])
     epsilon_min = float(exploration_config["epsilon_min"])
@@ -461,6 +500,7 @@ def _train_dqn_parallel(
         score_per_point=reward_config["score_per_point"],
         step_penalty=reward_config["step_penalty"],
         game_over_penalty=reward_config["game_over_penalty"],
+        line_rewards=reward_config.get("line_rewards"),
     ) as parallel_envs:
         states, legal_actions_list = parallel_envs.reset()
 
@@ -556,6 +596,15 @@ def _train_dqn_parallel(
                         truncated=not res["done"],
                         stop_reason=stop_reason,
                     )
+                    surveillance.record_episode(
+                        episode=ep_num,
+                        steps=worker_episode_steps[w],
+                        score=score,
+                        reward=worker_episode_reward[w],
+                        loss=mean(ep_losses) if ep_losses else None,
+                        epsilon=epsilon,
+                        environment_steps=environment_steps,
+                    )
 
                     if verbose:
                         loss_display = (
@@ -625,6 +674,7 @@ def _train_dqn_parallel(
         "final_done": final_done,
         "episode_stop_reasons": episode_stop_reasons,
         "model_path": str(experiment_manager.model_path),
+        "surveillance": surveillance.history[-1] if surveillance.history else None,
     }
 
     torch.save(
@@ -649,17 +699,117 @@ def _train_dqn_parallel(
     return summary
 
 
-def main() -> None:
+def build_parser() -> argparse.ArgumentParser:
+    """Build the command-line argument parser with all configurable hyperparameter overrides."""
     parser = argparse.ArgumentParser(
-        description="Train the Five-or-More DQN agent using the configured episode count."
+        description="Train the Five-or-More DQN agent with configurable parameters and rollouts."
+    )
+    parser.add_argument(
+        "--config",
+        default=None,
+        help="path to custom JSON configuration file (default: config/config.json)",
     )
     parser.add_argument(
         "--episodes",
         type=int,
         default=None,
-        help="override the configured episode count",
+        help="override total episode count",
     )
-    parser.add_argument("--device", default="cpu", help="torch device (default: cpu)")
+    parser.add_argument(
+        "--lr",
+        "--learning-rate",
+        type=float,
+        default=None,
+        dest="learning_rate",
+        help="override DQN optimizer learning rate",
+    )
+    parser.add_argument(
+        "--gamma",
+        type=float,
+        default=None,
+        help="override discount factor gamma",
+    )
+    parser.add_argument(
+        "--batch-size",
+        type=int,
+        default=None,
+        help="override replay buffer sample batch size",
+    )
+    parser.add_argument(
+        "--train-freq",
+        "--train-frequency",
+        type=int,
+        default=None,
+        dest="train_frequency",
+        help="override training update frequency (steps between gradient updates)",
+    )
+    parser.add_argument(
+        "--workers",
+        "--num-workers",
+        type=int,
+        default=None,
+        dest="num_workers",
+        help="override number of parallel rollout worker processes",
+    )
+    parser.add_argument(
+        "--target-update",
+        "--target-update-frequency",
+        type=int,
+        default=None,
+        dest="target_update_frequency",
+        help="override target network update frequency (optimizer steps between syncs)",
+    )
+    parser.add_argument(
+        "--step-penalty",
+        type=float,
+        default=None,
+        help="override step penalty (e.g. 0.001)",
+    )
+    parser.add_argument(
+        "--score-per-point",
+        type=float,
+        default=None,
+        help="override reward awarded per game score point (e.g. 1.0)",
+    )
+    parser.add_argument(
+        "--difficulty",
+        choices=["Easy", "Medium", "Hard"],
+        default=None,
+        help="override game difficulty",
+    )
+    parser.add_argument(
+        "--surveillance-interval",
+        type=int,
+        default=None,
+        help="episodes between surveillance & resource telemetry reports",
+    )
+    parser.add_argument(
+        "--eval-interval",
+        "--evaluation-interval",
+        type=int,
+        default=None,
+        dest="evaluation_interval",
+        help="episodes between policy evaluations against baseline",
+    )
+    parser.add_argument(
+        "--eval-episodes",
+        "--evaluation-episodes",
+        type=int,
+        default=None,
+        dest="evaluation_episodes",
+        help="number of benchmark episodes per evaluation run",
+    )
+    parser.add_argument(
+        "--epsilon-decay",
+        type=float,
+        default=None,
+        help="multiplicative epsilon decay applied per environment step",
+    )
+    parser.add_argument(
+        "--device",
+        default="cpu",
+        help="torch device (default: cpu)",
+    )
     parser.add_argument(
         "--experiment-dir",
         default=None,
@@ -670,16 +820,58 @@ def main() -> None:
         action="store_true",
         help="suppress live per-episode progress output",
     )
-    arguments = parser.parse_args()
-    config = load_config()
-    if arguments.episodes is not None:
-        config["training"]["episodes"] = arguments.episodes
-        config = validate_config(config)
+    return parser
+
+
+def apply_cli_overrides(config: dict[str, Any], args: argparse.Namespace) -> dict[str, Any]:
+    """Apply command-line argument overrides to the loaded configuration dictionary."""
+    if getattr(args, "episodes", None) is not None:
+        config["training"]["episodes"] = args.episodes
+    if getattr(args, "train_frequency", None) is not None:
+        config["training"]["train_frequency"] = args.train_frequency
+    if getattr(args, "num_workers", None) is not None:
+        config["training"]["num_workers"] = args.num_workers
+    if getattr(args, "evaluation_interval", None) is not None:
+        config["training"]["evaluation_interval"] = args.evaluation_interval
+    if getattr(args, "evaluation_episodes", None) is not None:
+        config["training"]["evaluation_episodes"] = args.evaluation_episodes
+    if getattr(args, "surveillance_interval", None) is not None:
+        config["training"]["surveillance_interval"] = args.surveillance_interval
+
+    if getattr(args, "learning_rate", None) is not None:
+        config["dqn"]["learning_rate"] = args.learning_rate
+    if getattr(args, "gamma", None) is not None:
+        config["dqn"]["gamma"] = args.gamma
+    if getattr(args, "batch_size", None) is not None:
+        config["dqn"]["batch_size"] = args.batch_size
+    if getattr(args, "target_update_frequency", None) is not None:
+        config["dqn"]["target_update_frequency"] = args.target_update_frequency
+
+    if getattr(args, "epsilon_decay", None) is not None:
+        config["exploration"]["epsilon_decay"] = args.epsilon_decay
+
+    if getattr(args, "difficulty", None) is not None:
+        config["environment"]["difficulty"] = args.difficulty
+
+    if getattr(args, "step_penalty", None) is not None:
+        config["reward"]["step_penalty"] = args.step_penalty
+    if getattr(args, "score_per_point", None) is not None:
+        config["reward"]["score_per_point"] = args.score_per_point
+
+    return validate_config(config)
+
+
+def main(argv: list[str] | None = None) -> None:
+    parser = build_parser()
+    arguments = parser.parse_args(argv)
+    config = load_config(arguments.config)
+    config = apply_cli_overrides(config, arguments)
     summary = train_dqn(
         config,
         device=arguments.device,
         experiment_dir=arguments.experiment_dir,
         verbose=not arguments.quiet,
+        surveillance_interval=arguments.surveillance_interval,
     )
     print(summary)
 

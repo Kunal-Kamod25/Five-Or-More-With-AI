@@ -66,6 +66,7 @@ def evaluate_policy(
         score_per_point=reward_config["score_per_point"],
         step_penalty=reward_config["step_penalty"],
         game_over_penalty=reward_config["game_over_penalty"],
+        line_rewards=reward_config.get("line_rewards"),
     )
     policy_rng = random.Random(seed)
     previous_random_state = random.getstate()

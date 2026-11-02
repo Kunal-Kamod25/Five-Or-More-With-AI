@@ -11,6 +11,7 @@ from collections import deque
 from numbers import Integral
 
 from ..core.game import Game
+from ..core.scoring import ScoreCalculator
 from ..core.state import StateEncoder
 
 
@@ -19,8 +20,8 @@ class FiveOrMoreEnv:
 
     ACTION_COUNT = 81 * 81
     INVALID_ACTION_REWARD = -1.0
-    REWARD_PER_SCORE_POINT = 0.1
-    STEP_PENALTY = 0.01
+    REWARD_PER_SCORE_POINT = 1.0
+    STEP_PENALTY = 0.001
     GAME_OVER_PENALTY = 1.0
 
     def __init__(
@@ -30,6 +31,7 @@ class FiveOrMoreEnv:
         score_per_point=REWARD_PER_SCORE_POINT,
         step_penalty=STEP_PENALTY,
         game_over_penalty=GAME_OVER_PENALTY,
+        line_rewards=None,
     ):
         if difficulty not in Game.DIFFICULTY_SPAWN_AMOUNTS:
             raise ValueError("difficulty must be Easy, Medium, or Hard.")
@@ -38,12 +40,21 @@ class FiveOrMoreEnv:
         self.score_per_point = float(score_per_point)
         self.step_penalty = float(step_penalty)
         self.game_over_penalty = float(game_over_penalty)
+        self.line_rewards = line_rewards
         self.game = None
         self.state_encoder = None
 
     def reset(self):
         """Start a fresh game and return its 9-by-9 integer state snapshot."""
-        self.game = Game(difficulty=self.difficulty)
+        score_calc = (
+            ScoreCalculator(self.line_rewards)
+            if self.line_rewards is not None
+            else None
+        )
+        self.game = Game(
+            difficulty=self.difficulty,
+            score_calculator=score_calc,
+        )
         self.game.start_game()
         self.state_encoder = StateEncoder(self.game.get_board())
         return self.get_state()

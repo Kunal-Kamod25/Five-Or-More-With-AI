@@ -20,6 +20,7 @@ def _worker_loop(
     score_per_point: float,
     step_penalty: float,
     game_over_penalty: float,
+    line_rewards: dict[int | str, float] | None = None,
 ) -> None:
     """Run an isolated FiveOrMoreEnv instance in a worker process."""
     parent_remote.close()
@@ -33,6 +34,7 @@ def _worker_loop(
         score_per_point=score_per_point,
         step_penalty=step_penalty,
         game_over_penalty=game_over_penalty,
+        line_rewards=line_rewards,
     )
 
     while True:
@@ -100,6 +102,7 @@ class ParallelEnvManager:
         score_per_point: float = FiveOrMoreEnv.REWARD_PER_SCORE_POINT,
         step_penalty: float = FiveOrMoreEnv.STEP_PENALTY,
         game_over_penalty: float = FiveOrMoreEnv.GAME_OVER_PENALTY,
+        line_rewards: dict[int | str, float] | None = None,
     ) -> None:
         self.closed = True
         if not isinstance(num_workers, int) or isinstance(num_workers, bool) or num_workers <= 0:
@@ -108,6 +111,7 @@ class ParallelEnvManager:
         self.num_workers = num_workers
         self.difficulty = difficulty
         self.base_seed = base_seed
+        self.line_rewards = line_rewards
 
         self.remotes: list[mp.connection.Connection] = []
         self.work_remotes: list[mp.connection.Connection] = []
@@ -128,6 +132,7 @@ class ParallelEnvManager:
                     score_per_point,
                     step_penalty,
                     game_over_penalty,
+                    self.line_rewards,
                 ),
                 daemon=True,
             )

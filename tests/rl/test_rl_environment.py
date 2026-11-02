@@ -263,6 +263,41 @@ class FiveOrMoreEnvTests(unittest.TestCase):
 
         self.assertAlmostEqual(reward, 2.4)
 
+    def test_default_line_rewards_and_step_penalty(self):
+        env = FiveOrMoreEnv()
+        env.reset()
+        for piece in env.game.get_pieces():
+            x, y = piece.get_position()
+            env.game.board_pieces.remove_piece(x, y)
+        for x in range(4):
+            env.game.board_pieces.add_piece(Piece(x, 0, 2))
+        env.game.board_pieces.add_piece(Piece(4, 1, 2))
+        env.game.board_pieces.add_piece(Piece(8, 8, 7))
+
+        action = env.encode_action(4, 1, 4, 0)
+        _, reward, _, info = env.step(action)
+        # 5 balls line clears -> 10 points * 1.0 - 0.001 = 9.999
+        self.assertAlmostEqual(reward, 9.999, places=3)
+        self.assertEqual(info["score_delta"], 10)
+
+    def test_custom_line_rewards_mapping_is_used(self):
+        custom_rewards = {"5": 15.0, "6": 20.0, "7": 25.0, "8": 30.0, "9": 35.0}
+        env = FiveOrMoreEnv(line_rewards=custom_rewards, step_penalty=0.002)
+        env.reset()
+        for piece in env.game.get_pieces():
+            x, y = piece.get_position()
+            env.game.board_pieces.remove_piece(x, y)
+        for x in range(4):
+            env.game.board_pieces.add_piece(Piece(x, 0, 2))
+        env.game.board_pieces.add_piece(Piece(4, 1, 2))
+        env.game.board_pieces.add_piece(Piece(8, 8, 7))
+
+        action = env.encode_action(4, 1, 4, 0)
+        _, reward, _, info = env.step(action)
+        # 5 balls line clears -> 15.0 - 0.002 = 14.998
+        self.assertAlmostEqual(reward, 14.998, places=3)
+        self.assertEqual(info["score_delta"], 15)
+
     def test_invalid_action_types_are_handled(self):
         state_before = self.env.get_state()
 

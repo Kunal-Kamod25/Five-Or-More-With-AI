@@ -152,6 +152,71 @@ class GameRendererTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             GameRenderer(object())
 
+    def test_history_button_and_drawer_rects(self):
+        history_rect = self.renderer.gameplay_button_rect("history")
+        self.assertIsInstance(history_rect, pygame.Rect)
+        self.assertEqual(history_rect.width, 86)
+        self.assertEqual(history_rect.height, 36)
+
+        close_rect = self.renderer.drawer_close_button_rect()
+        self.assertIsInstance(close_rect, pygame.Rect)
+        self.assertEqual(close_rect.size, (28, 28))
+
+        full_drawer = self.renderer.drawer_rect(1.0)
+        self.assertEqual(full_drawer.width, self.renderer.DRAWER_WIDTH)
+        self.assertEqual(full_drawer.right, self.renderer.window_size[0])
+
+        closed_drawer = self.renderer.drawer_rect(0.0)
+        self.assertEqual(closed_drawer.left, self.renderer.window_size[0])
+
+    def test_draw_renders_history_drawer_open_and_closed(self):
+        surface = pygame.Surface(self.renderer.window_size)
+        sample_history = [
+            {
+                "turn": 1,
+                "color": 1,
+                "from_coord": "C3",
+                "to_coord": "C7",
+                "score_delta": 0,
+                "cleared": False,
+                "spawn_count": 2,
+            },
+            {
+                "turn": 2,
+                "color": 3,
+                "from_coord": "A1",
+                "to_coord": "E1",
+                "score_delta": 10,
+                "cleared": True,
+                "spawn_count": 0,
+            },
+        ]
+
+        # Draw with drawer fully open
+        self.renderer.draw(
+            surface,
+            history=sample_history,
+            drawer_open=True,
+            drawer_progress=1.0,
+        )
+
+        drawer_interior_pixel = (
+            self.renderer.window_size[0] - self.renderer.DRAWER_WIDTH + 20,
+            100,
+        )
+        self.assertNotEqual(
+            surface.get_at(drawer_interior_pixel)[:3],
+            self.renderer.BACKGROUND_COLOR,
+        )
+
+        # Draw empty history drawer
+        self.renderer.draw(
+            surface,
+            history=[],
+            drawer_open=True,
+            drawer_progress=1.0,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

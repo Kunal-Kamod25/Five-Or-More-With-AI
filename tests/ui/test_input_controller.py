@@ -122,6 +122,29 @@ class InputControllerTests(unittest.TestCase):
         self.assertFalse(self.controller.handle_event(event))
         self.assertIsNone(self.controller.selected_position)
 
+    def test_successful_move_records_history_entry(self):
+        self.click_cell(2, 2)
+        self.click_cell(3, 2)
+        self.controller.update(self.controller.MOVE_SECONDS_PER_STEP)
+
+        self.assertEqual(len(self.controller.history), 1)
+        entry = self.controller.history[0]
+        self.assertEqual(entry["turn"], 1)
+        self.assertEqual(entry["from_coord"], "C3")
+        self.assertEqual(entry["to_coord"], "D3")
+        self.assertEqual(entry["color"], 1)
+        self.assertIn("cleared", entry)
+        self.assertIn("spawn_count", entry)
+
+    def test_clear_history_empties_records(self):
+        self.click_cell(2, 2)
+        self.click_cell(3, 2)
+        self.controller.update(self.controller.MOVE_SECONDS_PER_STEP)
+        self.assertEqual(len(self.controller.history), 1)
+
+        self.controller.clear_history()
+        self.assertEqual(len(self.controller.history), 0)
+
 
 if __name__ == "__main__":
     unittest.main()

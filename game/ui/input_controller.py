@@ -16,6 +16,7 @@ class InputController:
             raise TypeError("renderer must be a GameRenderer object.")
         self.game = game
         self.renderer = renderer
+        self.history = []
         self.reset()
 
     def reset(self):
@@ -25,6 +26,10 @@ class InputController:
         self.moving_piece_color = None
         self.animation_elapsed = 0.0
         self.last_move_result = None
+
+    def clear_history(self):
+        """Clear recorded move history."""
+        self.history = []
 
     @property
     def movement_progress(self):
@@ -94,12 +99,66 @@ class InputController:
 
         source_x, source_y = self.movement_path[0]
         destination_x, destination_y = self.movement_path[-1]
+        moving_color = self.moving_piece_color or 1
+        score_before = self.game.get_score()
+
         move_result = self.game.make_move(
             source_x,
             source_y,
             destination_x,
             destination_y,
         )
+        score_after = self.game.get_score()
+        score_delta = max(0, score_after - score_before)
+
+        if move_result:
+            self._record_history_entry(
+                source_x=source_x,
+                source_y=source_y,
+                destination_x=destination_x,
+                destination_y=destination_y,
+                color=moving_color,
+                score_delta=score_delta,
+                score_after=score_after,
+            )
+
         self.reset()
         self.last_move_result = move_result
         return move_result
+
+    def _record_history_entry(
+        self,
+        source_x,
+        source_y,
+        destination_x,
+        destination_y,
+        color,
+        score_delta,
+        score_after,
+    ):
+        """Record a completed move in algebraic notation with clear/spawn outcomes."""
+        cleared = score_delta > 0
+        spawn_amount = (
+            0
+            if cleared
+            else getattr(self.game, "DIFFICULTY_SPAWN_AMOUNTS", {}).get(
+                getattr(self.game, "difficulty", "Medium"), 2
+            )
+        )
+        from_coord = f"{chr(ord('A') + source_x)}{source_y + 1}"
+        to_coord = f"{chr(ord('A') + destination_x)}{destination_y + 1}"
+
+        entry = {
+            "turn": len(self.history) + 1,
+            "color": color,
+            "source": (source_x, source_y),
+            "destination": (destination_x, destination_y),
+            "from_coord": from_coord,
+            "to_coord": to_coord,
+            "score_delta": score_delta,
+            "cleared": cleared,
+            "spawn_count": spawn_amount,
+            "total_score": score_after,
+        }
+        self.history.append(entry)
+        return entry

@@ -107,6 +107,7 @@ class TrainDQNTests(unittest.TestCase):
         self.config = copy.deepcopy(load_config())
         self.config["training"]["episodes"] = 2
         self.config["training"]["max_steps_per_episode"] = 5
+        self.config["training"]["train_frequency"] = 1
         self.config["dqn"]["target_update_frequency"] = 2
         self.config["exploration"]["epsilon_start"] = 1.0
         self.config["exploration"]["epsilon_min"] = 0.1

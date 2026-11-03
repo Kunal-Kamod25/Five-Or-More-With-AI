@@ -1,203 +1,158 @@
 <div align="center">
 
-# FIVE OR MORE
+# Five Or More with AI
 
-### *Learning to Play Using Deep Reinforcement Learning*
+### Learning to Play Five or More Using Deep Reinforcement Learning
 
-[![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![Pygame](https://img.shields.io/badge/Pygame-00A86B?style=for-the-badge)](https://www.pygame.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white)](https://pytorch.org/)
-[![NumPy](https://img.shields.io/badge/NumPy-013243?style=for-the-badge&logo=numpy&logoColor=white)](https://numpy.org/)
+[![NumPy](https://img.shields.io/badge/NumPy-013243?style=for-the-badge&logo=numpy)](https://numpy.org/)
 
 </div>
 
 ---
 
-## About
+## Overview
 
-**Five Or More with AI** is a Master's project focused on applying Deep Reinforcement Learning to the classic **Five or More / Color Lines** puzzle game.
+**Five Or More with AI** is a reinforcement-learning project that explores how a Deep Q-Network (DQN) agent can learn to play the classic Five or More / Color Lines puzzle game.
 
-The game is played on a **9×9 board**. Players move colored pieces through empty cells to form lines of five or more pieces of the same color. Matching lines are removed and points are awarded, while new pieces are added as the game progresses.
+The project combines a custom 9×9 game environment, a Convolutional Neural Network (CNN), and Deep Q-Learning to train an agent to evaluate and select legal moves.
 
-The original game was developed in **Rust + Bevy**. The active implementation is now written in **Python + Pygame**.
+The original game was developed using **Rust and Bevy** and later ported to **Python and Pygame** to support experimentation and AI training.
 
----
+## Gameplay Demo
 
-## Current Game
+![Five Or More gameplay demonstration](assets/gameplay/gameplay_only.gif)
 
-The Python version currently supports:
+## Key Features
 
-- 9×9 board
-- Seven piece colors
-- Random piece spawning
-- A* pathfinding
-- Horizontal, vertical, and diagonal line detection
-- 5+ line clearing
-- Score and highest score
-- Easy, Medium, and Hard difficulty
-- Start menu
-- Restart and quit controls
-- Game-over detection
-- Piece selection feedback
-- Movement animation
-- Movement path visualization
+- Interactive 9×9 Color Lines game with seven piece colors.
+- A* pathfinding for piece movement.
+- Horizontal, vertical, and diagonal line detection.
+- Configurable difficulty, spawning, and scoring.
+- Headless game environment for reinforcement-learning simulations.
+- CNN-based DQN agent with legal-action scoring.
+- Experience replay and target-network learning.
+- Parallel environment workers for training.
+- Configurable training and experiment tracking.
+- Automated tests covering game logic, UI, and reinforcement-learning components.
 
-### Scoring
+## AI Approach
 
-| Line Length | Score |
-|---:|---:|
-| 5 | 10 |
-| 6 | 12 |
-| 7 | 14 |
-| 8 | 16 |
-| 9 | 18 |
+The agent uses a **CNN + DQN architecture** to learn effective moves from game experience.
 
-### Difficulty
+- **State representation:** The 9×9 board is converted into seven binary color channels.
+- **Feature extraction:** Two convolutional layers learn spatial patterns from the board.
+- **Action evaluation:** The network combines source-cell features, destination-cell features, and board-level context to estimate Q-values for legal moves.
+- **Learning:** DQN uses epsilon-greedy exploration, experience replay, and a target network.
+- **Training:** Multiple game environments generate experiences for the learning agent.
 
-| Difficulty | New Pieces After a Normal Move |
-|---|---:|
-| Easy | 1 |
-| Medium | 2 |
-| Hard | 3 |
+The network architecture and training parameters are configurable through `config/config.json`.
 
----
+### CNN Architecture in Action
 
-## Game State Representation
+![Five Or More CNN Architecture](assets/architecture/5orMoreCNN.gif)
+## Architecture
 
-The board is represented as a **9×9 matrix** using:
+![Parallel DQN architecture](assets/architecture/parallel_dqn_architecture.svg)
 
-| Value | Color |
-|---:|---|
-| 0 | Empty |
-| 1 | Red |
-| 2 | Green |
-| 3 | Blue |
-| 4 | Yellow |
-| 5 | Purple |
-| 6 | Cyan |
-| 7 | Orange |
+## Engineering and Performance
 
-This representation is used as input to the reinforcement-learning environment.
+A major part of the project involved optimizing the headless game environment to make reinforcement-learning experiments more efficient.
 
----
+In a recorded benchmark:
 
-## Reinforcement Learning
+| Metric | Before optimization | After optimization |
+|---|---:|---:|
+| Simulation time per game | 11.14 s | 0.31 s |
+| A* calls per game | 176,568 | 1,703 |
 
-The project includes a CNN + DQN training pipeline.
+This represents approximately **36× faster game simulation** in that benchmark, alongside a substantial reduction in pathfinding overhead.
 
-```text
-Game State
-    ↓
-9×9 State Representation
-    ↓
-CNN
-    ↓
-Spatial Features
-    ↓
-DQN
-    ↓
-Action
-    ↓
-Game Environment
-    ↓
-Reward
-    ↓
-Next State
+## Tech Stack
+
+| Area | Technologies |
+|---|---|
+| Language | Python |
+| Game development | Pygame |
+| Deep learning | PyTorch |
+| Numerical operations | NumPy |
+| Reinforcement learning | CNN, DQN |
+| Parallel execution | Multiprocessing, optional Ray |
+| Testing | Python unittest |
+| Configuration | JSON |
+
+## Getting Started
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/Kunal-Kamod25/Five-Or-More-With-AI.git
+cd Five-Or-More-With-AI
 ```
 
-The implementation includes legal-action filtering, configurable rewards, replay and target networks, parallel environment workers, and an evaluation runner.
+### 2. Create the environment
 
----
-
-## Project Layout
-
-```text
-game/
-  core/   Board, movement, scoring, and game rules
-  ui/     Pygame application and input/rendering
-  rl/     Environment, DQN agent, evaluation, and training
-config/   Runtime and training configuration
-tests/    Tests grouped by core, UI, and RL domain
-docs/     Project explanations and architecture documentation
+```bash
+conda env create -f environment.yml
+conda activate five-or-more-ai
 ```
 
-Run the game and training with:
+### 3. Launch the game
 
-```powershell
+```bash
 python -m game.ui.main
+```
+
+### 4. Train the DQN agent
+
+```bash
 python -m game.rl.train_dqn
 ```
 
-Training periodically evaluates the greedy agent against random legal play on
-the same seeded games. Each run stores its exact config, config hash, episode
-metrics, and evaluation history under `data/experiments/run_NNN/`. The latest
-checkpoint is `model.pth`; the highest evaluation-average checkpoint is
-`best_model.pth`.
+### 5. Evaluate the trained agent
 
-Compare runs after changing `config/config.json`, evaluate a checkpoint, or
-watch the best saved agent play:
-
-```powershell
-python -m game.rl.compare_experiments
+```bash
 python -m game.rl.evaluate_agent --episodes 100
-python -m game.rl.play_agent
 ```
 
-In the AI playback window, **Space** pauses, **R** restarts, and **Escape**
-quits. Set `training.evaluation_interval` to `0` to disable periodic
-evaluation, or adjust `training.evaluation_episodes` to change benchmark size.
+### 6. Run the test suite
 
-Run the test suite with:
-
-```powershell
+```bash
 python -m unittest discover -s tests
 ```
 
-The previous `python -m game.main` and `python -m game.train_dqn` launch commands remain supported.
-Architecture notes are in [docs/architecture/ARCHITECTURE_WORKFLOW.md](docs/architecture/ARCHITECTURE_WORKFLOW.md).
+## Project Structure
+
+```text
+Five-Or-More-With-AI/
+│
+├── assets/             # Gameplay and architecture visuals
+├── config/             # Training and environment configuration
+├── data/               # Experiment and data directories
+├── docs/               # Architecture and project documentation
+├── game/
+│   ├── core/           # Game logic and mechanics
+│   ├── ui/             # Pygame interface
+│   └── rl/             # DQN, environment, training and evaluation
+├── tests/              # Core, UI and RL tests
+│
+├── environment.yml
+├── experiment_manager.py
+├── play_agent.py
+├── tune_hyperparameters.py
+├── RULES.md
+└── README.md
+```
+
+Training runs store their configuration, metrics, and model checkpoints under `data/experiments/`.
+
+## Contributors
+
+- **Khumba Lunganlung** — [Old-Daoist](https://github.com/Old-Daoist)
+- **Kunal Kamod** — [Kunal-Kamod25](https://github.com/Kunal-Kamod25)
 
 ---
 
-## Development Log
-
-### Version 0.5 — 2026-10-05
-
-- Ported the game from Rust + Bevy to Python + Pygame.
-- Rebuilt the core game as modular Python components.
-- Implemented board and piece management.
-- Implemented random spawning.
-- Implemented A* movement.
-- Implemented line detection, scoring, and match resolution.
-- Added difficulty selection, menus, restart/quit controls, score tracking, animation, and path visualization.
-- Prepared the project for the reinforcement learning phase.
-
-### Version 0.4 — 2026-09-05
-
-- Explored an early Python reinforcement learning environment.
-- Investigated 9×9 state representation.
-- Explored source-to-destination action representation.
-- Investigated legal-action filtering.
-
-### Version 0.3 — 2026-08-28
-
-- Worked on connecting game state with Python.
-- Added 9×9 board-state logging and visualization.
-
-### Version 0.2 — 2026-08-26
-
-- Added game-state extraction into 9×9 matrix form.
-- Tested state recording and fixed bugs.
-
-### Version 0.1 — 2026-08-15
-
-- Fixed early gameplay issues.
-- Began studying reinforcement learning environment design.
-
----
-
-
-
-## Team
-
-**Khumba Lunganlung**  https://github.com/Old-Daoist
-**Kunal Kamod**        https://github.com/Kunal-Kamod25
+*Developed as a Master's project in Scientific Computing.*

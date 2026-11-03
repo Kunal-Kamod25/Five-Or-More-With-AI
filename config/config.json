@@ -3,7 +3,7 @@
     "episodes": 200000,
     "max_steps_per_episode": 500,
     "seed": 42,
-    "train_frequency": 1,
+    "train_frequency": 9,
     "torch_threads": 4,
     "num_workers": 8,
     "evaluation_interval": 5000,
@@ -20,14 +20,20 @@
   },
   "exploration": {
     "epsilon_start": 1.0,
-    "epsilon_min": 0.05,
+    "epsilon_min": 0.0001,
     "epsilon_decay": 0.999995
   },
   "network": {
     "type": "CNN",
-    "hidden_layers": [128, 128],
+    "hidden_layers": [
+      64,
+      64
+    ],
     "cnn": {
-      "channels": [16, 32],
+      "channels": [
+        16,
+        32
+      ],
       "kernel_size": 3,
       "padding": 1
     }

@@ -481,18 +481,23 @@ def _train_dqn_parallel(
     episode_stop_reasons: list[str] = []
     final_epsilon = epsilon_start
     final_done = False
-
-    last_action: list[int | None] = [None] * num_workers
-    last_reward: list[float] = [0.0] * num_workers
-    worker_episode_steps = [0] * num_workers
-    worker_episode_reward = [0.0] * num_workers
-    worker_episode_losses: list[list[float]] = [[] for _ in range(num_workers)]
     next_evaluation_episode = evaluation_interval
 
     difficulty = config.get("environment", {}).get("difficulty", "Medium")
 
     reward_config = config["reward"]
-    with ParallelEnvManager(
+    use_ray = bool(training_config.get("use_ray", False))
+    ray_address = training_config.get("ray_address", None)
+    node_workers = training_config.get("node_workers", None)
+    if use_ray:
+        from .ray_env import RayEnvManager
+        env_manager_cls = RayEnvManager
+        env_kwargs = {"ray_address": ray_address, "node_workers": node_workers}
+    else:
+        env_manager_cls = ParallelEnvManager
+        env_kwargs = {}
+
+    with env_manager_cls(
         num_workers=num_workers,
         difficulty=difficulty,
         base_seed=seed,
@@ -501,7 +506,15 @@ def _train_dqn_parallel(
         step_penalty=reward_config["step_penalty"],
         game_over_penalty=reward_config["game_over_penalty"],
         line_rewards=reward_config.get("line_rewards"),
+        **env_kwargs,
     ) as parallel_envs:
+        num_workers = parallel_envs.num_workers
+        last_action: list[int | None] = [None] * num_workers
+        last_reward: list[float] = [0.0] * num_workers
+        worker_episode_steps = [0] * num_workers
+        worker_episode_reward = [0.0] * num_workers
+        worker_episode_losses: list[list[float]] = [[] for _ in range(num_workers)]
+
         states, legal_actions_list = parallel_envs.reset()
 
         while len(scores) < episodes:
@@ -820,11 +833,42 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="suppress live per-episode progress output",
     )
+    parser.add_argument(
+        "--use-ray",
+        action="store_true",
+        help="use distributed Ray actors for parallel environment rollouts across cluster",
+    )
+    parser.add_argument(
+        "--ray-address",
+        default=None,
+        help="address of Ray cluster (e.g. 'auto' or '192.168.6.106:6379')",
+    )
+    parser.add_argument(
+        "--node-workers",
+        default=None,
+        help="explicit worker count per node IP, e.g. '192.168.6.110:8,192.168.6.125:8,192.168.6.106:6'",
+    )
     return parser
 
 
 def apply_cli_overrides(config: dict[str, Any], args: argparse.Namespace) -> dict[str, Any]:
     """Apply command-line argument overrides to the loaded configuration dictionary."""
+    if getattr(args, "use_ray", False):
+        config["training"]["use_ray"] = True
+    if getattr(args, "ray_address", None) is not None:
+        config["training"]["ray_address"] = args.ray_address
+    if getattr(args, "node_workers", None) is not None:
+        config["training"]["node_workers"] = args.node_workers
+        try:
+            total_pinned = sum(
+                int(part.split(":", 1)[1].strip())
+                for part in args.node_workers.split(",")
+                if ":" in part
+            )
+            if total_pinned > 0 and getattr(args, "num_workers", None) is None:
+                config["training"]["num_workers"] = total_pinned
+        except Exception:
+            pass
     if getattr(args, "episodes", None) is not None:
         config["training"]["episodes"] = args.episodes
     if getattr(args, "train_frequency", None) is not None:

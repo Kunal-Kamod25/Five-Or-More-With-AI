@@ -79,7 +79,7 @@ class LegalActionQNetworkTests(unittest.TestCase):
 
     def test_flattened_board_summary_has_expected_size(self):
         _, summary = self.model._forward_features(self.board)
-        self.assertEqual(summary.shape, (1, 128))
+        self.assertEqual(summary.shape, (1, self.model.board_summary_size))
 
     def test_action_scores_match_candidate_count_and_order(self):
         env = FiveOrMoreEnv(difficulty="Easy")

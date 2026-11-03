@@ -95,9 +95,16 @@ def run_tuning_sweep(
     output_dir: str | Path | None = None,
     device: str = "cpu",
     seed: int = 42,
+    num_nodes: int = 1,
+    node_rank: int = 0,
     verbose: bool = True,
 ) -> dict[str, Any]:
     """Execute hyperparameter sweep across candidate trials and compile a ranked leaderboard."""
+    if num_nodes < 1:
+        raise ValueError("num_nodes must be a positive integer.")
+    if not (0 <= node_rank < num_nodes):
+        raise ValueError(f"node_rank must be in range [0, {num_nodes - 1}].")
+
     if base_config is None:
         base_config = load_config()
     else:
@@ -128,20 +135,36 @@ def run_tuning_sweep(
         seed=seed,
     )
 
+    # Partition trials across nodes if distributed across multiple PCs
+    if num_nodes > 1:
+        indexed_configs = [
+            (idx, cfg)
+            for idx, cfg in enumerate(trial_configs, start=1)
+            if (idx - 1) % num_nodes == node_rank
+        ]
+    else:
+        indexed_configs = list(enumerate(trial_configs, start=1))
+
     if verbose:
         print("\n" + "=" * 72)
         print(" [AUTOMATED HYPERPARAMETER TUNING SWEEP]".center(72))
         print("=" * 72)
-        print(f"  Trials to evaluate:  {len(trial_configs)}")
-        print(f"  Episodes per trial:  {episodes_per_trial:,}")
-        print(f"  Strategy:            {strategy.upper()}")
-        print(f"  Sweep Directory:     {base_dir}")
+        print(f"  Total trials in sweep: {len(trial_configs)}")
+        if num_nodes > 1:
+            print(f"  Distributed Nodes:    {num_nodes} (This node rank: {node_rank})")
+            assigned_ids = [idx for idx, _ in indexed_configs]
+            print(f"  Trials on this node:  {len(indexed_configs)} {assigned_ids}")
+        else:
+            print(f"  Trials to evaluate:   {len(trial_configs)}")
+        print(f"  Episodes per trial:   {episodes_per_trial:,}")
+        print(f"  Strategy:             {strategy.upper()}")
+        print(f"  Sweep Directory:      {base_dir}")
         print("=" * 72 + "\n")
 
     trial_results: list[dict[str, Any]] = []
     total_start = time.time()
 
-    for idx, trial_config in enumerate(trial_configs, start=1):
+    for idx, trial_config in indexed_configs:
         trial_dir = base_dir / f"trial_{idx:03d}"
         if verbose:
             print(f"\n--- [TRIAL {idx}/{len(trial_configs)}] ---")
@@ -377,9 +400,26 @@ def build_tuning_parser() -> argparse.ArgumentParser:
         help="random seed for trial sampling (default: 42)",
     )
     parser.add_argument(
+        "--num-nodes",
+        type=int,
+        default=1,
+        help="total number of participating machines/nodes (default: 1)",
+    )
+    parser.add_argument(
+        "--node-rank",
+        type=int,
+        default=0,
+        help="zero-indexed rank of this machine in multi-PC sweep (0 to num_nodes - 1, default: 0)",
+    )
+    parser.add_argument(
         "--quiet",
         action="store_true",
         help="suppress detailed per-episode output during trials",
+    )
+    parser.add_argument(
+        "--use-ray",
+        action="store_true",
+        help="use distributed Ray actors for parallel environment rollouts across cluster",
     )
     return parser
 
@@ -391,6 +431,8 @@ def main(argv: list[str] | None = None) -> None:
     base_config = load_config(args.config)
     if args.workers is not None:
         base_config["training"]["num_workers"] = args.workers
+    if args.use_ray:
+        base_config["training"]["use_ray"] = True
 
     search_space = copy.deepcopy(DEFAULT_SEARCH_SPACE)
     if args.lr is not None:
@@ -411,6 +453,8 @@ def main(argv: list[str] | None = None) -> None:
         output_dir=args.output_dir,
         device=args.device,
         seed=args.seed,
+        num_nodes=args.num_nodes,
+        node_rank=args.node_rank,
         verbose=not args.quiet,
     )
     if args.quiet:

@@ -17,6 +17,7 @@ dependencies:
       - python-docx
       - pygame
       - psutil
+      - ray[default]
 
 # To create this environment:
 #   conda env create -f environment.yml

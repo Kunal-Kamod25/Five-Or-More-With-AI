@@ -108,6 +108,55 @@ class HyperparameterTuningTests(unittest.TestCase):
             self.assertEqual(parsed_json["leaderboard"][0]["rank"], 1)
             self.assertEqual(parsed_json["leaderboard"][1]["rank"], 2)
 
+    def test_multi_node_partitioning(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            test_space = {
+                "dqn.learning_rate": [0.0001, 0.0002, 0.0003, 0.0004],
+            }
+            config = load_config()
+            config["training"]["max_steps_per_episode"] = 2
+            config["training"]["num_workers"] = 1
+            config["training"]["evaluation_episodes"] = 1
+
+            # Node 0 of 2 should evaluate trials 1 and 3
+            results_node0 = run_tuning_sweep(
+                base_config=config,
+                search_space=test_space,
+                episodes_per_trial=1,
+                max_trials=4,
+                strategy="grid",
+                output_dir=Path(tmpdir) / "node0",
+                num_nodes=2,
+                node_rank=0,
+                verbose=False,
+            )
+            self.assertEqual(results_node0["trials_evaluated"], 2)
+            evaluated_trials_0 = [r["trial"] for r in results_node0["ranked_results"]]
+            self.assertEqual(sorted(evaluated_trials_0), [1, 3])
+
+            # Node 1 of 2 should evaluate trials 2 and 4
+            results_node1 = run_tuning_sweep(
+                base_config=config,
+                search_space=test_space,
+                episodes_per_trial=1,
+                max_trials=4,
+                strategy="grid",
+                output_dir=Path(tmpdir) / "node1",
+                num_nodes=2,
+                node_rank=1,
+                verbose=False,
+            )
+            self.assertEqual(results_node1["trials_evaluated"], 2)
+            evaluated_trials_1 = [r["trial"] for r in results_node1["ranked_results"]]
+            self.assertEqual(sorted(evaluated_trials_1), [2, 4])
+
+    def test_multi_node_validation_errors(self):
+        config = load_config()
+        with self.assertRaises(ValueError):
+            run_tuning_sweep(base_config=config, num_nodes=0, node_rank=0)
+        with self.assertRaises(ValueError):
+            run_tuning_sweep(base_config=config, num_nodes=2, node_rank=2)
+
 
 if __name__ == "__main__":
     unittest.main()

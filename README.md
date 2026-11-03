@@ -1,7 +1,8 @@
-# Five Or More with AI
-### Learning to Play Five or More Using Deep Reinforcement Learning
-
 <div align="center">
+
+# Five Or More with AI
+
+### Learning to Play Five or More Using Deep Reinforcement Learning
 
 [![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![Pygame](https://img.shields.io/badge/Pygame-00A86B?style=for-the-badge)](https://www.pygame.org/)

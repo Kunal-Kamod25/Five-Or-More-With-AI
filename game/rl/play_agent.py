@@ -109,6 +109,27 @@ def play_agent(
     )
     agent.online_network.eval()
 
+    results_path = checkpoint_path.parent / "results.json"
+    results_info: dict[str, Any] = {}
+    if results_path.is_file():
+        try:
+            import json
+            results_info = json.loads(results_path.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+
+    print("\n" + "=" * 65)
+    print(f" [OK] LOADED TRAINED MODEL: {checkpoint_path}")
+    if results_info:
+        print(f" [OK] TOTAL ENVIRONMENT STEPS: {results_info.get('environment_steps', 'N/A'):,}")
+        print(f" [OK] BEST TRAINING SCORE: {results_info.get('best_score', 'N/A')}")
+        eval_dict = results_info.get("best_evaluation", {})
+        base_dict = results_info.get("random_baseline", {})
+        if eval_dict and base_dict:
+            print(f" [OK] EVALUATION SCORE: {eval_dict.get('average_score')} (vs Random Baseline: {base_dict.get('average_score')})")
+    print(" [OK] POLICY: Greedy Evaluation (epsilon = 0.0, deterministic argmax)")
+    print("=" * 65 + "\n")
+
     if seed is not None:
         random.seed(seed)
     reward_config = config["reward"]
@@ -145,7 +166,7 @@ def play_agent(
 
         def start_game_with_difficulty(diff: str):
             nonlocal chosen_difficulty, env, renderer, app_state, game_over, paused
-            nonlocal move_phase, phase_timer, selected_pos, moving_path, moving_color, moving_progress
+            nonlocal move_phase, phase_timer, selected_pos, moving_path, moving_color, moving_progress, last_action
             chosen_difficulty = diff
             env = _create_env(chosen_difficulty, reward_config)
             env.reset()
@@ -153,6 +174,7 @@ def play_agent(
             history.clear()
             game_over = False
             paused = False
+            last_action = None
             move_phase = "IDLE"
             phase_timer = 0.0
             selected_pos = None
@@ -181,6 +203,7 @@ def play_agent(
         moving_path: list[tuple[int, int]] | None = None
         moving_progress = 0.0
         glide_elapsed = 0.0
+        last_action: int | None = None
 
         update_caption()
 
@@ -279,10 +302,17 @@ def play_agent(
                         if not legal_actions:
                             game_over = True
                         else:
+                            avoid_actions: list[int] = []
+                            if last_action is not None:
+                                prev_sx, prev_sy, prev_dx, prev_dy = env.decode_action(last_action)
+                                reverse_action = env.encode_action(prev_dx, prev_dy, prev_sx, prev_sy)
+                                avoid_actions.append(reverse_action)
+
                             action = agent.select_action(
                                 env.get_state(),
                                 legal_actions,
                                 epsilon=0.0,
+                                avoid_actions=avoid_actions,
                             )
                             if action is None:
                                 raise RuntimeError("The agent failed to choose a legal action.")
@@ -322,6 +352,8 @@ def play_agent(
                         score_delta = max(0, score_after - score_before)
                         cleared = score_delta > 0
                         spawn_amount = 0 if cleared else env.game.DIFFICULTY_SPAWN_AMOUNTS.get(chosen_difficulty, 2)
+
+                        last_action = None if cleared else pending_action
 
                         history.append({
                             "turn": len(history) + 1,

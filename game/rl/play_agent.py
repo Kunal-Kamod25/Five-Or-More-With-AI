@@ -1,23 +1,39 @@
-"""Watch a trained DQN agent play a game in the Pygame window."""
+"""Watch a trained DQN agent play a game in the Pygame window with interactive difficulty selection."""
 
 from __future__ import annotations
 
 import argparse
 import random
+import sys
 from pathlib import Path
 from typing import Any
+
+# Ensure project root is in sys.path so the module can be run directly from any directory
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+if str(_PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PROJECT_ROOT))
 
 import pygame
 import torch
 
 from config.config_loader import load_config, validate_config
-from ..ui.renderer import GameRenderer
-from .dqn_agent import DQNAgent
-from .evaluate_agent import find_latest_checkpoint
-from .rl_environment import FiveOrMoreEnv
+
+try:
+    from ..ui.renderer import GameRenderer
+except (ImportError, ValueError):
+    from game.ui.renderer import GameRenderer
+
+try:
+    from .dqn_agent import DQNAgent
+    from .evaluate_agent import find_latest_checkpoint
+    from .rl_environment import FiveOrMoreEnv
+except (ImportError, ValueError):
+    from game.rl.dqn_agent import DQNAgent
+    from game.rl.evaluate_agent import find_latest_checkpoint
+    from game.rl.rl_environment import FiveOrMoreEnv
 
 
-def _is_history_button_click(renderer, pos):
+def _is_history_button_click(renderer: Any, pos: tuple[int, int]) -> bool:
     try:
         rect = renderer.gameplay_button_rect("history")
         return rect.collidepoint(pos)
@@ -25,7 +41,7 @@ def _is_history_button_click(renderer, pos):
         return False
 
 
-def _is_drawer_close_click(renderer, pos):
+def _is_drawer_close_click(renderer: Any, pos: tuple[int, int]) -> bool:
     try:
         rect = renderer.drawer_close_button_rect()
         return rect.collidepoint(pos)
@@ -33,7 +49,7 @@ def _is_drawer_close_click(renderer, pos):
         return False
 
 
-def _is_inside_drawer(renderer, pos, drawer_progress):
+def _is_inside_drawer(renderer: Any, pos: tuple[int, int], drawer_progress: float) -> bool:
     try:
         rect = renderer.drawer_rect(drawer_progress)
         return rect.collidepoint(pos)
@@ -41,15 +57,26 @@ def _is_inside_drawer(renderer, pos, drawer_progress):
         return False
 
 
+def _create_env(chosen_difficulty: str, reward_config: dict[str, Any]) -> FiveOrMoreEnv:
+    return FiveOrMoreEnv(
+        difficulty=chosen_difficulty,
+        invalid_action_reward=reward_config["invalid_action"],
+        score_per_point=reward_config["score_per_point"],
+        step_penalty=reward_config["step_penalty"],
+        game_over_penalty=reward_config["game_over_penalty"],
+        line_rewards=reward_config.get("line_rewards"),
+    )
+
+
 def play_agent(
     model_path: str | Path | None = None,
     *,
     device: torch.device | str = "cpu",
-    delay_ms: int = 800,
+    delay_ms: int = 1200,
     seed: int | None = 42,
     difficulty: str | None = None,
 ) -> None:
-    """Run one visual game with smooth step-by-step animations and interactive controls."""
+    """Run interactive visual game: prompts for difficulty first, then animates slow, clear AI moves."""
     if not isinstance(delay_ms, int) or isinstance(delay_ms, bool) or delay_ms < 0:
         raise ValueError("delay_ms must be a non-negative integer.")
     if model_path is None:
@@ -81,19 +108,20 @@ def play_agent(
     if seed is not None:
         random.seed(seed)
     reward_config = config["reward"]
-    chosen_difficulty = difficulty or config["environment"].get("difficulty", "Medium")
-    env = FiveOrMoreEnv(
-        difficulty=chosen_difficulty,
-        invalid_action_reward=reward_config["invalid_action"],
-        score_per_point=reward_config["score_per_point"],
-        step_penalty=reward_config["step_penalty"],
-        game_over_penalty=reward_config["game_over_penalty"],
-        line_rewards=reward_config.get("line_rewards"),
-    )
+
+    # If difficulty is not explicitly passed via CLI, start in MENU state to ask the user
+    show_menu = difficulty is None
+    chosen_difficulty = difficulty or "Easy"
+    app_state = "MENU" if show_menu else "PLAYING"
+
+    env = _create_env(chosen_difficulty, reward_config)
     env.reset()
     renderer = GameRenderer(env.game)
 
-    MOVE_STEP_SECONDS = 0.12  # Glide speed per cell
+    # Slow, deliberate, and clear animation speeds
+    MOVE_STEP_SECONDS = 0.22   # Smooth, slow glide per cell (easy to follow)
+    SELECT_AURA_SECONDS = 0.40 # Clear pause showing selected ball breathing aura
+    POST_MOVE_PAUSE = 0.55     # Clear pause showing lines cleared or new balls spawned
     current_delay_ms = delay_ms
 
     pygame.init()
@@ -101,10 +129,34 @@ def play_agent(
         screen = pygame.display.set_mode(renderer.window_size)
 
         def update_caption():
-            status = "PAUSED" if paused else f"{current_delay_ms}ms"
-            pygame.display.set_caption(
-                f"Five-or-More AI ({chosen_difficulty}) | Speed: {status} | [↑/↓] Speed | [Space] Pause | [H] History"
-            )
+            if app_state == "MENU":
+                pygame.display.set_caption(
+                    "Five-or-More AI | Select Difficulty [Easy / Medium / Hard] and Start"
+                )
+            else:
+                status = "PAUSED" if paused else f"{current_delay_ms}ms"
+                pygame.display.set_caption(
+                    f"Five-or-More AI ({chosen_difficulty}) | Speed: {status} | [↑/↓] Speed | [Space] Pause | [R] Restart | [Esc] Menu"
+                )
+
+        def start_game_with_difficulty(diff: str):
+            nonlocal chosen_difficulty, env, renderer, app_state, game_over, paused
+            nonlocal move_phase, phase_timer, selected_pos, moving_path, moving_color, moving_progress
+            chosen_difficulty = diff
+            env = _create_env(chosen_difficulty, reward_config)
+            env.reset()
+            renderer = GameRenderer(env.game)
+            history.clear()
+            game_over = False
+            paused = False
+            move_phase = "IDLE"
+            phase_timer = 0.0
+            selected_pos = None
+            moving_path = None
+            moving_color = None
+            moving_progress = 0.0
+            app_state = "PLAYING"
+            update_caption()
 
         clock = pygame.time.Clock()
         paused = False
@@ -141,70 +193,81 @@ def play_agent(
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
-                elif event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_ESCAPE:
-                        if drawer_open:
-                            drawer_open = False
-                        else:
-                            running = False
-                    elif event.key == pygame.K_h:
-                        drawer_open = not drawer_open
-                    elif event.key == pygame.K_SPACE and not game_over:
-                        paused = not paused
-                        update_caption()
-                    elif event.key in (pygame.K_DOWN, pygame.K_MINUS):
-                        current_delay_ms = min(3000, current_delay_ms + 200)
-                        update_caption()
-                    elif event.key in (pygame.K_UP, pygame.K_PLUS, pygame.K_EQUALS):
-                        current_delay_ms = max(50, current_delay_ms - 150)
-                        update_caption()
-                    elif event.key == pygame.K_r:
-                        env.reset()
-                        history.clear()
-                        game_over = False
-                        paused = False
-                        drawer_open = False
-                        drawer_progress = 0.0
-                        drawer_scroll = 0
-                        move_phase = "IDLE"
-                        phase_timer = 0.0
-                        selected_pos = None
-                        moving_path = None
-                        moving_color = None
-                        moving_progress = 0.0
-                        update_caption()
-                elif event.type == pygame.MOUSEWHEEL and drawer_open:
-                    drawer_scroll = max(0, drawer_scroll - event.y * 30)
-                elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                    if renderer.gameplay_button_rect("quit").collidepoint(event.pos):
-                        running = False
-                    elif renderer.gameplay_button_rect("restart").collidepoint(event.pos):
-                        env.reset()
-                        history.clear()
-                        game_over = False
-                        paused = False
-                        drawer_open = False
-                        drawer_progress = 0.0
-                        drawer_scroll = 0
-                        move_phase = "IDLE"
-                        phase_timer = 0.0
-                        selected_pos = None
-                        moving_path = None
-                        moving_color = None
-                        moving_progress = 0.0
-                        update_caption()
-                    elif _is_history_button_click(renderer, event.pos):
-                        drawer_open = not drawer_open
-                    elif drawer_open:
-                        if _is_drawer_close_click(renderer, event.pos):
-                            drawer_open = False
-                        elif _is_inside_drawer(renderer, event.pos, drawer_progress):
-                            pass
-                        else:
-                            drawer_open = False
 
-            # State Machine: Animate step-by-step so the user can easily watch the AI play
-            if running and not paused and not game_over:
+                # ------------------- MENU STATE EVENTS -------------------
+                elif app_state == "MENU":
+                    if event.type == pygame.KEYDOWN:
+                        if event.key in (pygame.K_1, pygame.K_e):
+                            chosen_difficulty = "Easy"
+                            env.game.difficulty = "Easy"
+                        elif event.key in (pygame.K_2, pygame.K_m):
+                            chosen_difficulty = "Medium"
+                            env.game.difficulty = "Medium"
+                        elif event.key in (pygame.K_3, pygame.K_h):
+                            chosen_difficulty = "Hard"
+                            env.game.difficulty = "Hard"
+                        elif event.key in (pygame.K_RETURN, pygame.K_SPACE):
+                            start_game_with_difficulty(chosen_difficulty)
+                        elif event.key == pygame.K_ESCAPE:
+                            running = False
+
+                    elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                        # Check difficulty buttons
+                        for diff_name in ("Easy", "Medium", "Hard"):
+                            if renderer.menu_button_rect(diff_name).collidepoint(event.pos):
+                                chosen_difficulty = diff_name
+                                env.game.difficulty = diff_name
+
+                        if renderer.menu_button_rect("start").collidepoint(event.pos):
+                            start_game_with_difficulty(chosen_difficulty)
+                        elif renderer.menu_button_rect("quit").collidepoint(event.pos):
+                            running = False
+
+                # ------------------- PLAYING STATE EVENTS -------------------
+                elif app_state == "PLAYING":
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_ESCAPE:
+                            if drawer_open:
+                                drawer_open = False
+                            else:
+                                # Return to difficulty selection menu
+                                app_state = "MENU"
+                                update_caption()
+                        elif event.key == pygame.K_h:
+                            drawer_open = not drawer_open
+                        elif event.key == pygame.K_SPACE and not game_over:
+                            paused = not paused
+                            update_caption()
+                        elif event.key in (pygame.K_DOWN, pygame.K_MINUS):
+                            current_delay_ms = min(4000, current_delay_ms + 200)
+                            update_caption()
+                        elif event.key in (pygame.K_UP, pygame.K_PLUS, pygame.K_EQUALS):
+                            current_delay_ms = max(100, current_delay_ms - 200)
+                            update_caption()
+                        elif event.key == pygame.K_r:
+                            start_game_with_difficulty(chosen_difficulty)
+
+                    elif event.type == pygame.MOUSEWHEEL and drawer_open:
+                        drawer_scroll = max(0, drawer_scroll - event.y * 30)
+
+                    elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                        if renderer.gameplay_button_rect("quit").collidepoint(event.pos):
+                            app_state = "MENU"
+                            update_caption()
+                        elif renderer.gameplay_button_rect("restart").collidepoint(event.pos):
+                            start_game_with_difficulty(chosen_difficulty)
+                        elif _is_history_button_click(renderer, event.pos):
+                            drawer_open = not drawer_open
+                        elif drawer_open:
+                            if _is_drawer_close_click(renderer, event.pos):
+                                drawer_open = False
+                            elif _is_inside_drawer(renderer, event.pos, drawer_progress):
+                                pass
+                            else:
+                                drawer_open = False
+
+            # ------------------- PLAYING GAMEPLAY LOGIC -------------------
+            if app_state == "PLAYING" and running and not paused and not game_over:
                 if move_phase == "IDLE":
                     phase_timer += elapsed_sec
                     if phase_timer >= (current_delay_ms / 1000.0):
@@ -232,8 +295,8 @@ def play_agent(
 
                 elif move_phase == "SELECTING":
                     phase_timer += elapsed_sec
-                    # Highlight selected piece for 0.28 seconds
-                    if phase_timer >= 0.28:
+                    # Highlight selected piece clearly before moving
+                    if phase_timer >= SELECT_AURA_SECONDS:
                         moving_path = pending_path
                         glide_elapsed = 0.0
                         move_phase = "GLIDING"
@@ -279,24 +342,29 @@ def play_agent(
 
                 elif move_phase == "COOLDOWN":
                     phase_timer += elapsed_sec
-                    # Pause 0.35 seconds so the user sees the cleared line or newly spawned balls
-                    if phase_timer >= 0.35:
+                    # Pause so the viewer clearly sees the cleared line or newly spawned balls
+                    if phase_timer >= POST_MOVE_PAUSE:
                         move_phase = "IDLE"
                         phase_timer = 0.0
 
-            renderer.draw(
-                screen,
-                selected_position=selected_pos if not game_over else None,
-                movement_path=moving_path if not game_over else None,
-                moving_piece_color=moving_color if not game_over else None,
-                movement_progress=moving_progress if not game_over else 0.0,
-                history=history,
-                drawer_open=drawer_open,
-                drawer_progress=drawer_progress,
-                drawer_scroll=drawer_scroll,
-            )
-            if game_over:
-                renderer.draw_game_over(screen)
+            # ------------------- DRAWING -------------------
+            if app_state == "MENU":
+                renderer.draw_menu(screen)
+            elif app_state == "PLAYING":
+                renderer.draw(
+                    screen,
+                    selected_position=selected_pos if not game_over else None,
+                    movement_path=moving_path if not game_over else None,
+                    moving_piece_color=moving_color if not game_over else None,
+                    movement_progress=moving_progress if not game_over else 0.0,
+                    history=history,
+                    drawer_open=drawer_open,
+                    drawer_progress=drawer_progress,
+                    drawer_scroll=drawer_scroll,
+                )
+                if game_over:
+                    renderer.draw_game_over(screen)
+
             pygame.display.flip()
     finally:
         pygame.quit()
@@ -310,11 +378,16 @@ def main() -> None:
     parser.add_argument(
         "--difficulty",
         choices=["Easy", "Medium", "Hard"],
-        default="Medium",
-        help="difficulty level (default: Medium)",
+        default=None,
+        help="difficulty level (default: None, opens interactive selection menu)",
     )
     parser.add_argument("--device", default="cpu")
-    parser.add_argument("--delay-ms", type=int, default=800, help="delay in ms between agent moves (default: 800)")
+    parser.add_argument(
+        "--delay-ms",
+        type=int,
+        default=1200,
+        help="delay in ms between agent moves (default: 1200ms for slow, clear moves)",
+    )
     parser.add_argument("--seed", type=int, default=42)
     arguments = parser.parse_args()
     play_agent(

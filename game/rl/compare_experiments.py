@@ -34,6 +34,11 @@ FIELDNAMES = (
 def collect_experiments(base_dir: str | Path) -> list[dict[str, Any]]:
     """Load each run's final metrics and config snapshot for comparison."""
     root = Path(base_dir)
+    if not root.is_absolute() and not root.exists():
+        project_root = Path(__file__).resolve().parent.parent.parent
+        alt_path = project_root / base_dir
+        if alt_path.exists():
+            root = alt_path
     if not root.exists():
         raise FileNotFoundError(f"Experiment directory not found: {root}")
 

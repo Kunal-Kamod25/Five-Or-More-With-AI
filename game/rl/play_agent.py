@@ -87,6 +87,10 @@ def play_agent(
                 "Train an agent or pass --model <path>."
             )
     checkpoint_path = Path(model_path)
+    if not checkpoint_path.is_absolute() and not checkpoint_path.is_file():
+        alt_path = _PROJECT_ROOT / checkpoint_path
+        if alt_path.is_file():
+            checkpoint_path = alt_path
     if not checkpoint_path.is_file():
         raise FileNotFoundError(f"Model checkpoint not found: {checkpoint_path}")
 

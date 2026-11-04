@@ -18,7 +18,14 @@ from .rl_environment import FiveOrMoreEnv
 def find_latest_checkpoint(base_dir: str | Path = "data/experiments") -> Path | None:
     """Find the most recent experiment model checkpoint."""
     experiments_path = Path(base_dir)
-    if not experiments_path.exists():
+    if not experiments_path.is_absolute() and not experiments_path.exists():
+        project_root = Path(__file__).resolve().parent.parent.parent
+        alt_path = project_root / base_dir
+        if alt_path.exists():
+            experiments_path = alt_path
+        else:
+            return None
+    elif not experiments_path.exists():
         return None
 
     run_dirs = [
@@ -178,6 +185,11 @@ def evaluate_agent(
             )
 
     model_file = Path(model_path)
+    if not model_file.is_absolute() and not model_file.exists():
+        project_root = Path(__file__).resolve().parent.parent.parent
+        alt_path = project_root / model_path
+        if alt_path.exists():
+            model_file = alt_path
     if not model_file.exists():
         raise FileNotFoundError(f"Model checkpoint not found at: {model_file}")
     if not isinstance(log_interval, int) or isinstance(log_interval, bool) or log_interval <= 0:

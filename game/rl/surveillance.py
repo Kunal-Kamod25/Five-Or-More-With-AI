@@ -4,12 +4,16 @@ from __future__ import annotations
 
 import json
 import os
-import resource
 import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from statistics import mean
 from typing import Any
+
+try:
+    import resource
+except ImportError:
+    resource = None
 
 try:
     import psutil
@@ -51,13 +55,54 @@ def get_process_memory_mb() -> float:
         except Exception:
             pass
 
-    # Fallback to standard library resource
-    try:
-        max_rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-        # On Linux, ru_maxrss is in kilobytes
-        return round(float(max_rss) / 1024.0, 2)
-    except Exception:
-        return 0.0
+    if resource is not None:
+        try:
+            max_rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+            # macOS reports bytes, while Linux reports kilobytes.
+            divisor = 1024.0 * 1024.0 if os.name == "darwin" else 1024.0
+            return round(float(max_rss) / divisor, 2)
+        except Exception:
+            pass
+
+    if os.name == "nt":
+        import ctypes
+        from ctypes import wintypes
+
+        class ProcessMemoryCounters(ctypes.Structure):
+            _fields_ = [
+                ("cb", wintypes.DWORD),
+                ("PageFaultCount", wintypes.DWORD),
+                ("PeakWorkingSetSize", ctypes.c_size_t),
+                ("WorkingSetSize", ctypes.c_size_t),
+                ("QuotaPeakPagedPoolUsage", ctypes.c_size_t),
+                ("QuotaPagedPoolUsage", ctypes.c_size_t),
+                ("QuotaPeakNonPagedPoolUsage", ctypes.c_size_t),
+                ("QuotaNonPagedPoolUsage", ctypes.c_size_t),
+                ("PagefileUsage", ctypes.c_size_t),
+                ("PeakPagefileUsage", ctypes.c_size_t),
+            ]
+
+        counters = ProcessMemoryCounters()
+        counters.cb = ctypes.sizeof(counters)
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel32.GetCurrentProcess.restype = wintypes.HANDLE
+        process_handle = kernel32.GetCurrentProcess()
+        get_memory_info = ctypes.WinDLL("psapi", use_last_error=True).GetProcessMemoryInfo
+        get_memory_info.argtypes = [
+            wintypes.HANDLE,
+            ctypes.POINTER(ProcessMemoryCounters),
+            wintypes.DWORD,
+        ]
+        get_memory_info.restype = wintypes.BOOL
+        if not get_memory_info(
+            process_handle,
+            ctypes.byref(counters),
+            counters.cb,
+        ):
+            raise ctypes.WinError(ctypes.get_last_error())
+        return round(counters.WorkingSetSize / (1024.0 * 1024.0), 2)
+
+    return 0.0
 
 
 def get_cpu_percent() -> float:

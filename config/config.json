@@ -1,11 +1,11 @@
 {
   "training": {
-    "episodes": 200000,
+    "episodes": 10000,
     "max_steps_per_episode": 500,
     "seed": 42,
-    "train_frequency": 9,
-    "torch_threads": 4,
-    "num_workers": 8,
+    "train_frequency": 4,
+    "torch_threads": 2,
+    "num_workers": 4,
     "evaluation_interval": 5000,
     "evaluation_episodes": 25,
     "surveillance_interval": 100
@@ -13,15 +13,15 @@
   "dqn": {
     "learning_rate": 0.00025,
     "gamma": 0.99,
-    "batch_size": 64,
-    "replay_buffer_size": 100000,
+    "batch_size": 32,
+    "replay_buffer_size": 50000,
     "target_update_frequency": 1000,
     "deduplicate_transitions": false
   },
   "exploration": {
     "epsilon_start": 1.0,
-    "epsilon_min": 0.0001,
-    "epsilon_decay": 0.999995
+    "epsilon_min": 0.05,
+    "epsilon_decay": 0.99998
   },
   "network": {
     "type": "CNN",
@@ -31,21 +31,23 @@
     ],
     "cnn": {
       "channels": [
-        16,
-        32
+        2,
+        4
       ],
       "kernel_size": 3,
       "padding": 1
     }
   },
   "environment": {
-    "difficulty": "Medium"
+    "difficulty": "Easy"
   },
   "reward": {
     "invalid_action": -1.0,
     "score_per_point": 1.0,
     "step_penalty": 0.001,
-    "game_over_penalty": 1.0,
+    "game_over_penalty": 9.0,
+    "same_color_connection_reward": 0,
+    "same_color_disconnection_penalty": 0,
     "line_rewards": {
       "5": 10.0,
       "6": 12.0,

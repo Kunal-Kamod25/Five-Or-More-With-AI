@@ -74,6 +74,14 @@ def evaluate_policy(
         step_penalty=reward_config["step_penalty"],
         game_over_penalty=reward_config["game_over_penalty"],
         line_rewards=reward_config.get("line_rewards"),
+        same_color_connection_reward=reward_config.get(
+            "same_color_connection_reward",
+            FiveOrMoreEnv.SAME_COLOR_CONNECTION_REWARD,
+        ),
+        same_color_disconnection_penalty=reward_config.get(
+            "same_color_disconnection_penalty",
+            FiveOrMoreEnv.SAME_COLOR_DISCONNECTION_PENALTY,
+        ),
     )
     policy_rng = random.Random(seed)
     previous_random_state = random.getstate()

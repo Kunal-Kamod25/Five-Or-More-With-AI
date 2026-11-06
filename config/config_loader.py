@@ -172,6 +172,18 @@ def validate_config(config: dict[str, Any], path: Path | str | None = None) -> d
     _validate_positive_number(reward.get("score_per_point"), "reward.score_per_point", config_path)
     _validate_non_negative_number(reward.get("step_penalty"), "reward.step_penalty", config_path)
     _validate_positive_number(reward.get("game_over_penalty"), "reward.game_over_penalty", config_path)
+    if "same_color_connection_reward" in reward:
+        _validate_non_negative_number(
+            reward["same_color_connection_reward"],
+            "reward.same_color_connection_reward",
+            config_path,
+        )
+    if "same_color_disconnection_penalty" in reward:
+        _validate_non_negative_number(
+            reward["same_color_disconnection_penalty"],
+            "reward.same_color_disconnection_penalty",
+            config_path,
+        )
     if "line_rewards" in reward and reward["line_rewards"] is not None:
         line_rewards = reward["line_rewards"]
         if not isinstance(line_rewards, dict):

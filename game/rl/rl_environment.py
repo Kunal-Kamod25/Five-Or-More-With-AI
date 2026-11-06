@@ -23,6 +23,8 @@ class FiveOrMoreEnv:
     REWARD_PER_SCORE_POINT = 1.0
     STEP_PENALTY = 0.001
     GAME_OVER_PENALTY = 1.0
+    SAME_COLOR_CONNECTION_REWARD = 0.1
+    SAME_COLOR_DISCONNECTION_PENALTY = 0.1
 
     def __init__(
         self,
@@ -32,6 +34,8 @@ class FiveOrMoreEnv:
         step_penalty=STEP_PENALTY,
         game_over_penalty=GAME_OVER_PENALTY,
         line_rewards=None,
+        same_color_connection_reward=SAME_COLOR_CONNECTION_REWARD,
+        same_color_disconnection_penalty=SAME_COLOR_DISCONNECTION_PENALTY,
     ):
         if difficulty not in Game.DIFFICULTY_SPAWN_AMOUNTS:
             raise ValueError("difficulty must be Easy, Medium, or Hard.")
@@ -41,6 +45,10 @@ class FiveOrMoreEnv:
         self.step_penalty = float(step_penalty)
         self.game_over_penalty = float(game_over_penalty)
         self.line_rewards = line_rewards
+        self.same_color_connection_reward = float(same_color_connection_reward)
+        self.same_color_disconnection_penalty = float(
+            same_color_disconnection_penalty
+        )
         self.game = None
         self.state_encoder = None
 
@@ -104,6 +112,9 @@ class FiveOrMoreEnv:
             return self._invalid_action("action is not a legal move.")
         source_x, source_y, destination_x, destination_y = coordinates
 
+        previous_group_potential = self._same_color_group_potential(
+            self.get_state()
+        )
         previous_score = self.game.get_score()
         moved = self.game.make_move(
             source_x,
@@ -115,9 +126,26 @@ class FiveOrMoreEnv:
             return self._invalid_action("game rejected the requested move.")
 
         score_delta = self.game.get_score() - previous_score
+        group_potential_delta = (
+            self._same_color_group_potential(self.get_state())
+            - previous_group_potential
+        )
+        connection_reward = 0.0
+        disconnection_penalty = 0.0
+        if score_delta == 0:
+            connection_reward = (
+                max(group_potential_delta, 0)
+                * self.same_color_connection_reward
+            )
+            disconnection_penalty = (
+                max(-group_potential_delta, 0)
+                * self.same_color_disconnection_penalty
+            )
         done = self.game.is_game_over()
         reward = (
             score_delta * self.score_per_point
+            + connection_reward
+            - disconnection_penalty
             - self.step_penalty
         )
         if done:
@@ -126,9 +154,52 @@ class FiveOrMoreEnv:
         info = {
             "invalid_action": False,
             "score_delta": score_delta,
+            "same_color_group_potential_delta": group_potential_delta,
+            "connection_reward": connection_reward,
+            "disconnection_penalty": disconnection_penalty,
             "difficulty": self.game.difficulty,
         }
         return self.get_state(), reward, done, info
+
+    @staticmethod
+    def _same_color_group_potential(state):
+        """Score same-color components quadratically by their size."""
+        board_size = len(state)
+        visited = set()
+        potential = 0
+        directions = tuple(
+            (delta_x, delta_y)
+            for delta_y in (-1, 0, 1)
+            for delta_x in (-1, 0, 1)
+            if delta_x or delta_y
+        )
+
+        for y in range(board_size):
+            for x in range(board_size):
+                color = state[y][x]
+                if color == 0 or (x, y) in visited:
+                    continue
+
+                component = [(x, y)]
+                visited.add((x, y))
+                for current_x, current_y in component:
+                    for delta_x, delta_y in directions:
+                        neighbor_x = current_x + delta_x
+                        neighbor_y = current_y + delta_y
+                        neighbor = (neighbor_x, neighbor_y)
+                        if (
+                            0 <= neighbor_x < board_size
+                            and 0 <= neighbor_y < board_size
+                            and neighbor not in visited
+                            and state[neighbor_y][neighbor_x] == color
+                        ):
+                            visited.add(neighbor)
+                            component.append(neighbor)
+
+                if len(component) > 1:
+                    potential += (len(component) - 1) ** 2
+
+        return potential
 
     def _reachable_empty_cells(self, source_x, source_y):
         """Return empty cells connected orthogonally to a source piece."""

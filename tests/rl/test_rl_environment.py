@@ -298,6 +298,67 @@ class FiveOrMoreEnvTests(unittest.TestCase):
         self.assertAlmostEqual(reward, 14.998, places=3)
         self.assertEqual(info["score_delta"], 15)
 
+    def test_move_joining_same_color_pieces_receives_connection_reward(self):
+        env = FiveOrMoreEnv(
+            same_color_connection_reward=0.5,
+            same_color_disconnection_penalty=0.75,
+        )
+        env.reset()
+        for piece in env.game.get_pieces():
+            x, y = piece.get_position()
+            env.game.board_pieces.remove_piece(x, y)
+        env.game.board_pieces.add_piece(Piece(0, 0, 1))
+        env.game.board_pieces.add_piece(Piece(2, 1, 1))
+        action = env.encode_action(0, 0, 1, 1)
+
+        with patch.object(env.game.spawner, "spawn", return_value=[]):
+            _, reward, _, info = env.step(action)
+
+        self.assertAlmostEqual(reward, 0.499)
+        self.assertEqual(info["same_color_group_potential_delta"], 1)
+        self.assertEqual(info["connection_reward"], 0.5)
+
+    def test_joining_larger_group_receives_progressively_higher_reward(self):
+        env = FiveOrMoreEnv(
+            same_color_connection_reward=0.5,
+            same_color_disconnection_penalty=0.75,
+        )
+        env.reset()
+        for piece in env.game.get_pieces():
+            x, y = piece.get_position()
+            env.game.board_pieces.remove_piece(x, y)
+        for x in range(3):
+            env.game.board_pieces.add_piece(Piece(x, 0, 1))
+        env.game.board_pieces.add_piece(Piece(4, 1, 1))
+        action = env.encode_action(4, 1, 3, 0)
+
+        with patch.object(env.game.spawner, "spawn", return_value=[]):
+            _, reward, _, info = env.step(action)
+
+        self.assertAlmostEqual(reward, 2.499)
+        self.assertEqual(info["same_color_group_potential_delta"], 5)
+        self.assertEqual(info["connection_reward"], 2.5)
+
+    def test_move_splitting_same_color_pieces_receives_disconnection_penalty(self):
+        env = FiveOrMoreEnv(
+            same_color_connection_reward=0.5,
+            same_color_disconnection_penalty=0.75,
+        )
+        env.reset()
+        for piece in env.game.get_pieces():
+            x, y = piece.get_position()
+            env.game.board_pieces.remove_piece(x, y)
+        for x in range(4):
+            env.game.board_pieces.add_piece(Piece(x, 0, 1))
+        action = env.encode_action(1, 0, 4, 4)
+
+        with patch.object(env.game.spawner, "spawn", return_value=[]):
+            _, reward, _, info = env.step(action)
+
+        self.assertAlmostEqual(reward, -6.001)
+        self.assertEqual(info["same_color_group_potential_delta"], -8)
+        self.assertEqual(info["disconnection_penalty"], 6.0)
+
     def test_invalid_action_types_are_handled(self):
         state_before = self.env.get_state()
 

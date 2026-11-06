@@ -21,6 +21,8 @@ def _worker_loop(
     step_penalty: float,
     game_over_penalty: float,
     line_rewards: dict[int | str, float] | None = None,
+    same_color_connection_reward: float = FiveOrMoreEnv.SAME_COLOR_CONNECTION_REWARD,
+    same_color_disconnection_penalty: float = FiveOrMoreEnv.SAME_COLOR_DISCONNECTION_PENALTY,
 ) -> None:
     """Run an isolated FiveOrMoreEnv instance in a worker process."""
     parent_remote.close()
@@ -35,6 +37,8 @@ def _worker_loop(
         step_penalty=step_penalty,
         game_over_penalty=game_over_penalty,
         line_rewards=line_rewards,
+        same_color_connection_reward=same_color_connection_reward,
+        same_color_disconnection_penalty=same_color_disconnection_penalty,
     )
 
     while True:
@@ -103,6 +107,8 @@ class ParallelEnvManager:
         step_penalty: float = FiveOrMoreEnv.STEP_PENALTY,
         game_over_penalty: float = FiveOrMoreEnv.GAME_OVER_PENALTY,
         line_rewards: dict[int | str, float] | None = None,
+        same_color_connection_reward: float = FiveOrMoreEnv.SAME_COLOR_CONNECTION_REWARD,
+        same_color_disconnection_penalty: float = FiveOrMoreEnv.SAME_COLOR_DISCONNECTION_PENALTY,
     ) -> None:
         self.closed = True
         if not isinstance(num_workers, int) or isinstance(num_workers, bool) or num_workers <= 0:
@@ -133,6 +139,8 @@ class ParallelEnvManager:
                     step_penalty,
                     game_over_penalty,
                     self.line_rewards,
+                    same_color_connection_reward,
+                    same_color_disconnection_penalty,
                 ),
                 daemon=True,
             )

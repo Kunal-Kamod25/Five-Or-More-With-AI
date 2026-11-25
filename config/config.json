@@ -1,13 +1,13 @@
 {
   "training": {
-    "episodes": 10000,
-    "max_steps_per_episode": 500,
+    "episodes": 1000,
+    "max_steps_per_episode": 250,
     "seed": 42,
     "train_frequency": 4,
     "torch_threads": 2,
     "num_workers": 4,
-    "evaluation_interval": 5000,
-    "evaluation_episodes": 25,
+    "evaluation_interval": 250,
+    "evaluation_episodes": 5,
     "surveillance_interval": 100
   },
   "dqn": {

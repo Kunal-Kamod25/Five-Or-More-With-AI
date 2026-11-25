@@ -6,7 +6,7 @@ from .scoring import ScoreCalculator
 class MatchResolver:
     """Score detected lines and remove their Pieces from the board."""
 
-    DIRECTIONS = ((1, 0), (0, 1), (1, 1), (1, -1))
+    DIRECTIONS = ((1, 0), (0, 1))
     MIN_MATCH_LENGTH = 5
 
     def __init__(self, board_pieces, line_detector, score_calculator):

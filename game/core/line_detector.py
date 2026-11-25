@@ -5,7 +5,7 @@ class LineDetector:
     """Find all board positions that belong to lines of five or more."""
 
     MIN_MATCH_LENGTH = 5
-    DIRECTIONS = ((1, 0), (0, 1), (1, 1), (1, -1))
+    DIRECTIONS = ((1, 0), (0, 1))
 
     def __init__(self, board_pieces):
         if not isinstance(board_pieces, BoardPieces):

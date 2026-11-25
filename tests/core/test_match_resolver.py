@@ -57,11 +57,25 @@ class MatchResolverTests(unittest.TestCase):
     def test_exactly_five_vertical_pieces_score_and_are_removed(self):
         self.assert_resolved_line({(3, y) for y in range(5)}, 10)
 
-    def test_exactly_five_diagonal_down_right_pieces_score_and_are_removed(self):
-        self.assert_resolved_line({(index, index) for index in range(5)}, 10)
+    def test_exactly_five_diagonal_down_right_pieces_do_not_match(self):
+        positions = {(index, index) for index in range(5)}
+        pieces = self.add_positions(positions)
 
-    def test_exactly_five_diagonal_up_right_pieces_score_and_are_removed(self):
-        self.assert_resolved_line({(index, 8 - index) for index in range(5)}, 10)
+        score, removed_pieces = self.resolver.resolve_matches()
+
+        self.assertEqual(score, 0)
+        self.assertEqual(removed_pieces, [])
+        self.assertEqual(set(self.board_pieces.get_pieces()), set(pieces))
+
+    def test_exactly_five_diagonal_up_right_pieces_do_not_match(self):
+        positions = {(index, 8 - index) for index in range(5)}
+        pieces = self.add_positions(positions)
+
+        score, removed_pieces = self.resolver.resolve_matches()
+
+        self.assertEqual(score, 0)
+        self.assertEqual(removed_pieces, [])
+        self.assertEqual(set(self.board_pieces.get_pieces()), set(pieces))
 
     def test_lines_of_six_through_nine_score_correctly(self):
         for line_length, expected_score in (

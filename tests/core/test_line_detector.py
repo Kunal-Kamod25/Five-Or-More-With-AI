@@ -33,17 +33,17 @@ class LineDetectorTests(unittest.TestCase):
 
         self.assertEqual(self.detector.find_matches(), positions)
 
-    def test_exactly_five_diagonal_down_right_pieces_match(self):
+    def test_exactly_five_diagonal_down_right_pieces_do_not_match(self):
         positions = {(index, index) for index in range(5)}
         self.add_positions(sorted(positions))
 
-        self.assertEqual(self.detector.find_matches(), positions)
+        self.assertEqual(self.detector.find_matches(), set())
 
-    def test_exactly_five_diagonal_up_right_pieces_match(self):
+    def test_exactly_five_diagonal_up_right_pieces_do_not_match(self):
         positions = {(index, 8 - index) for index in range(5)}
         self.add_positions(sorted(positions))
 
-        self.assertEqual(self.detector.find_matches(), positions)
+        self.assertEqual(self.detector.find_matches(), set())
 
     def test_fewer_than_five_contiguous_pieces_do_not_match(self):
         positions = {(x, 4) for x in range(4)}
@@ -82,16 +82,11 @@ class LineDetectorTests(unittest.TestCase):
         self.assertEqual(matches, expected)
         self.assertEqual(len(matches), 17)
 
-    def test_lines_at_board_edges_and_corners_are_detected(self):
+    def test_horizontal_line_at_board_edge_is_detected(self):
         top_edge = {(x, 0) for x in range(4, 9)}
-        down_right_from_corner = {(index, index) for index in range(5)}
-        up_right_from_corner = {(index, 8 - index) for index in range(5)}
-        expected = (
-            top_edge | down_right_from_corner | up_right_from_corner
-        )
-        self.add_positions(sorted(expected))
+        self.add_positions(sorted(top_edge))
 
-        self.assertEqual(self.detector.find_matches(), expected)
+        self.assertEqual(self.detector.find_matches(), top_edge)
 
 
 if __name__ == "__main__":

@@ -318,6 +318,15 @@ class FiveOrMoreEnvTests(unittest.TestCase):
         self.assertEqual(info["same_color_group_potential_delta"], 1)
         self.assertEqual(info["connection_reward"], 0.5)
 
+    def test_same_color_group_potential_uses_only_orthogonal_neighbors(self):
+        state = [[0] * 3 for _ in range(3)]
+        state[0][0] = 1
+        state[1][1] = 1
+        self.assertEqual(FiveOrMoreEnv._same_color_group_potential(state), 0)
+
+        state[0][1] = 1
+        self.assertEqual(FiveOrMoreEnv._same_color_group_potential(state), 4)
+
     def test_joining_larger_group_receives_progressively_higher_reward(self):
         env = FiveOrMoreEnv(
             same_color_connection_reward=0.5,

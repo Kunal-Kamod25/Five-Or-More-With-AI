@@ -167,12 +167,7 @@ class FiveOrMoreEnv:
         board_size = len(state)
         visited = set()
         potential = 0
-        directions = tuple(
-            (delta_x, delta_y)
-            for delta_y in (-1, 0, 1)
-            for delta_x in (-1, 0, 1)
-            if delta_x or delta_y
-        )
+        directions = ((-1, 0), (1, 0), (0, -1), (0, 1))
 
         for y in range(board_size):
             for x in range(board_size):

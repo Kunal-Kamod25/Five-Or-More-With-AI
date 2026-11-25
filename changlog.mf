@@ -1,0 +1,26 @@
+CHANGELOG
+
+2026-11-06 14:48:28 +05:30
+- Added configurable rewards for connecting same-colored pieces and penalties
+  for separating adjacent same-colored pieces, including diagonal neighbors.
+- Excluded line-clearing moves from connection penalties.
+- Passed reward settings through local, parallel, and Ray training and evaluation.
+- Added configuration validation and tests for connection shaping.
+- Documented reward shaping in the README.
+- Added tests confirming connection rewards and disconnection penalties.
+
+2026-11-06 15:00:53 +05:30
+- Changed connection shaping to use quadratic same-color group potential:
+  joining larger groups earns progressively more, while breaking larger groups
+  incurs progressively higher penalties.
+- Added tests confirming reward and penalty scale with group size.
+
+2026-11-06 15:28:42 +05:30
+- Reduced CNN filter counts from [16, 32] to [2, 4].
+
+2026-11-06 15:30:03 +05:30
+- Reduced the configured training episode count from 200,000 to 1,000.
+
+2026-11-06 15:31:26 +05:30
+- Made training surveillance import and memory reporting work on Windows,
+  where the Unix-only `resource` module is unavailable.

@@ -74,8 +74,8 @@ class LegalActionQNetworkTests(unittest.TestCase):
         conv1 = self.model.relu(self.model.conv1(board_tensor))
         conv2 = self.model.relu(self.model.conv2(conv1))
 
-        self.assertEqual(conv1.shape, (1, 16, 9, 9))
-        self.assertEqual(conv2.shape, (1, 32, 9, 9))
+        self.assertEqual(conv1.shape, (1, self.model.conv_channels[0], 9, 9))
+        self.assertEqual(conv2.shape, (1, self.model.conv_channels[1], 9, 9))
 
     def test_flattened_board_summary_has_expected_size(self):
         _, summary = self.model._forward_features(self.board)

@@ -88,6 +88,18 @@ class ConfigLoaderTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "line length"):
             validate_config(config)
 
+    def test_negative_same_color_reward_is_detected(self):
+        config = json.loads(json.dumps(self.default_config))
+        config["reward"]["same_color_connection_reward"] = -0.1
+        with self.assertRaisesRegex(ValueError, "same_color_connection_reward"):
+            validate_config(config)
+
+    def test_negative_same_color_penalty_is_detected(self):
+        config = json.loads(json.dumps(self.default_config))
+        config["reward"]["same_color_disconnection_penalty"] = -0.1
+        with self.assertRaisesRegex(ValueError, "same_color_disconnection_penalty"):
+            validate_config(config)
+
 
 class ExperimentManagerTests(unittest.TestCase):
     def setUp(self):

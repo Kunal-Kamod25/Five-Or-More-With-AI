@@ -27,6 +27,8 @@ class _WorkerLogic:
         step_penalty: float = FiveOrMoreEnv.STEP_PENALTY,
         game_over_penalty: float = FiveOrMoreEnv.GAME_OVER_PENALTY,
         line_rewards: dict[int | str, float] | None = None,
+        same_color_connection_reward: float = FiveOrMoreEnv.SAME_COLOR_CONNECTION_REWARD,
+        same_color_disconnection_penalty: float = FiveOrMoreEnv.SAME_COLOR_DISCONNECTION_PENALTY,
     ) -> None:
         self.worker_id = worker_id
         if seed is not None:
@@ -39,6 +41,8 @@ class _WorkerLogic:
             step_penalty=step_penalty,
             game_over_penalty=game_over_penalty,
             line_rewards=line_rewards,
+            same_color_connection_reward=same_color_connection_reward,
+            same_color_disconnection_penalty=same_color_disconnection_penalty,
         )
 
     def reset(self) -> tuple[Any, list[int]]:
@@ -105,6 +109,8 @@ class RayEnvManager:
         step_penalty: float = FiveOrMoreEnv.STEP_PENALTY,
         game_over_penalty: float = FiveOrMoreEnv.GAME_OVER_PENALTY,
         line_rewards: dict[int | str, float] | None = None,
+        same_color_connection_reward: float = FiveOrMoreEnv.SAME_COLOR_CONNECTION_REWARD,
+        same_color_disconnection_penalty: float = FiveOrMoreEnv.SAME_COLOR_DISCONNECTION_PENALTY,
         ray_address: str | None = None,
         node_workers: dict[str, int] | str | None = None,
     ) -> None:
@@ -193,6 +199,8 @@ class RayEnvManager:
                 step_penalty=step_penalty,
                 game_over_penalty=game_over_penalty,
                 line_rewards=self.line_rewards,
+                same_color_connection_reward=same_color_connection_reward,
+                same_color_disconnection_penalty=same_color_disconnection_penalty,
             )
             self.workers.append(actor)
 

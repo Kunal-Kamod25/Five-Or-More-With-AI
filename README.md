@@ -46,6 +46,7 @@ The agent uses a **CNN + DQN architecture** to learn effective moves from game e
 - **Feature extraction:** Two convolutional layers learn spatial patterns from the board.
 - **Action evaluation:** The network combines source-cell features, destination-cell features, and board-level context to estimate Q-values for legal moves.
 - **Learning:** DQN uses epsilon-greedy exploration, experience replay, and a target network.
+- **Reward shaping:** The agent receives configurable rewards for connecting same-colored pieces and penalties for separating them, in addition to line-clear scores.
 - **Training:** Multiple game environments generate experiences for the learning agent.
 
 The network architecture and training parameters are configurable through `config/config.json`.

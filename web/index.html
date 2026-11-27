@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#111511">
+    <meta name="description" content="Play Five or More against a trained DQN or challenge a friend locally.">
+    <title>Five or More — a little strategy, a lot of color</title>
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="topbar">
+        <a class="brand" href="./" aria-label="Five or More home">
+          <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+          <span class="brand-name">FIVE <b>/</b> MORE</span>
+        </a>
+        <nav class="top-nav" aria-label="Main navigation">
+          <a class="nav-link active" href="#play">PLAY</a>
+          <a class="nav-link" href="#how-to-play">HOW TO PLAY</a>
+          <a class="nav-link" href="https://github.com/Kunal-Kamod25/Five-Or-More-With-AI" target="_blank" rel="noreferrer">SOURCE ↗</a>
+        </nav>
+        <div class="runtime-pill"><span class="status-dot"></span><span id="model-status">LOADING DQN</span></div>
+      </header>
+
+      <main id="play">
+        <section class="intro">
+          <div class="intro-copy">
+            <p class="eyebrow"><span class="eyebrow-line"></span> A CLASSIC, REIMAGINED</p>
+            <h1>Make a line.<br><em>Make it count.</em></h1>
+            <p class="intro-text">Move the orbs. Connect five. Clear the board.<br>Play a friend or test your moves against a learning agent.</p>
+          </div>
+          <div class="intro-side" aria-label="Game facts">
+            <div class="fact"><strong>09 × 09</strong><span>THE BOARD</span></div>
+            <span class="fact-divider"></span>
+            <div class="fact"><strong>05+</strong><span>TO CLEAR A LINE</span></div>
+            <span class="fact-divider"></span>
+            <div class="fact"><strong>07</strong><span>COLOR OPTIONS</span></div>
+          </div>
+        </section>
+
+        <section class="game-layout" aria-label="Five or More game">
+          <div class="board-column">
+            <div class="board-topline">
+              <div>
+                <p class="section-kicker">THE PLAYING FIELD <span>01 / 02</span></p>
+                <div class="turn-line">
+                  <span class="turn-indicator" id="turn-indicator"></span>
+                  <h2 id="turn-label">Choose your game</h2>
+                </div>
+              </div>
+              <button class="icon-button" id="restart-button" type="button" aria-label="Start a new game" title="New game" disabled>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4.6 9a7 7 0 0 1 11.6-2L20 12M4 17v-5h5m10.4 3a7 7 0 0 1-11.6 2L4 12"/></svg>
+              </button>
+            </div>
+            <div class="board-frame">
+              <div class="board" id="board" role="grid" aria-label="Nine by nine game board"></div>
+            </div>
+            <div class="board-footer">
+              <p><span class="keycap">CLICK</span> an orb, then an empty cell</p>
+              <p class="board-note" id="board-note">Connect five or more orbs of the same color</p>
+            </div>
+          </div>
+
+          <aside class="control-column">
+            <section class="panel mode-panel">
+              <div class="panel-heading">
+                <div><p class="section-kicker">PICK YOUR SIDE <span>02 / 02</span></p><h2>How do you play?</h2></div>
+              </div>
+              <div class="mode-options" role="group" aria-label="Game mode">
+                <button class="mode-option selected" type="button" data-mode="ai" aria-pressed="true">
+                  <span class="mode-icon ai-icon" aria-hidden="true">✳</span>
+                  <span class="mode-copy"><strong>VS. THE DQN</strong><small>Face the trained agent</small></span>
+                  <span class="mode-arrow" aria-hidden="true">↗</span>
+                </button>
+                <button class="mode-option" type="button" data-mode="local" aria-pressed="false">
+                  <span class="mode-icon local-icon" aria-hidden="true"><i></i><i></i></span>
+                  <span class="mode-copy"><strong>TWO PLAYERS</strong><small>Pass the keyboard</small></span>
+                  <span class="mode-arrow" aria-hidden="true">↗</span>
+                </button>
+              </div>
+
+              <div class="setting-row">
+                <div class="setting-label"><span>DIFFICULTY</span><strong id="difficulty-value">EASY</strong></div>
+                <div class="segmented" role="group" aria-label="Difficulty">
+                  <button type="button" data-difficulty="Easy" aria-pressed="true">EASY</button>
+                  <button type="button" data-difficulty="Medium" aria-pressed="false">MID</button>
+                  <button type="button" data-difficulty="Hard" aria-pressed="false">HARD</button>
+                </div>
+              </div>
+
+              <div class="setting-row color-setting">
+                <label class="setting-label" for="color-count"><span>COLOR COUNT</span><strong><span id="color-count-value">2</span> / 7</strong></label>
+                <input id="color-count" type="range" min="1" max="7" value="2">
+                <div class="range-labels"><span>SIMPLER</span><span>MORE CHAOS</span></div>
+              </div>
+
+              <button class="primary-button" id="start-button" type="button">
+                <span>START GAME</span><span class="button-arrow" aria-hidden="true">→</span>
+              </button>
+              <p class="model-note" id="mode-note">A score-maximizing DQN policy, running right here in your browser.</p>
+            </section>
+
+            <section class="score-panel panel">
+              <div class="score-heading"><span class="section-kicker">THE SCORE</span><span class="live-label" id="game-state-label">READY</span></div>
+              <div class="score-pair">
+                <div class="score-player active" id="score-player-one">
+                  <span class="player-name" id="player-one-name">YOU</span>
+                  <strong class="player-score" id="player-one-score">00</strong>
+                  <span class="player-caption" id="player-one-caption">YOUR POINTS</span>
+                </div>
+                <div class="score-separator"><span>—</span></div>
+                <div class="score-player" id="score-player-two">
+                  <span class="player-name" id="player-two-name">DQN</span>
+                  <strong class="player-score" id="player-two-score">00</strong>
+                  <span class="player-caption" id="player-two-caption">AGENT POINTS</span>
+                </div>
+              </div>
+              <div class="score-bottom"><span>BEST LINE</span><strong id="best-line">—</strong></div>
+            </section>
+
+            <section class="how-panel panel" id="how-to-play">
+              <div class="how-title"><span class="how-number">?</span><h2>How to play</h2></div>
+              <ol class="how-list">
+                <li><span>01</span> Select an orb, then a reachable empty cell.</li>
+                <li><span>02</span> Connect 5+ matching orbs in a row to score.</li>
+                <li><span>03</span> No line? New orbs arrive. Keep space to move.</li>
+              </ol>
+              <p class="direction-note">Lines can run horizontally or vertically. Diagonal lines don’t count.</p>
+            </section>
+          </aside>
+        </section>
+
+        <section class="bottom-strip">
+          <span>BUILT WITH A LITTLE REINFORCEMENT LEARNING</span>
+          <span class="strip-center"><i></i> NO ACCOUNT · NO SERVER · FREE TO PLAY</span>
+          <span>MADE FOR THE NEXT MOVE <b>↗</b></span>
+        </section>
+      </main>
+      <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    </div>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

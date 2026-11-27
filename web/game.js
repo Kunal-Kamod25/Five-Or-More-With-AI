@@ -154,6 +154,7 @@ export function createGame({ mode = "ai", difficulty = "Easy", colorCount = 2 } 
     lastMove: null,
     gameOver: false,
     turnCount: 0,
+    linesCleared: 0,
     bestLine: 0,
     history: [],
     lastAction: null,
@@ -184,9 +185,17 @@ export function playMove(game, source, destination) {
     };
   }
   game.scores[actor] += result.score;
+  game.linesCleared += result.lines.length;
   game.bestLine = Math.max(game.bestLine, ...result.lines.map((line) => line.length), 0);
   game.selected = null;
-  game.lastMove = { source, destination, path, cleared: result.cleared, spawned: spawn };
+  game.lastMove = {
+    source,
+    destination,
+    path,
+    cleared: result.cleared,
+    spawned: spawn,
+    lineLength: result.lines.reduce((best, line) => Math.max(best, line.length), 0),
+  };
   game.lastAction = source * CELL_COUNT + destination;
   game.lastReward = result.score;
   game.history.unshift({
@@ -201,7 +210,7 @@ export function playMove(game, source, destination) {
   if (game.history.length > 8) game.history.length = 8;
 
   game.gameOver = getLegalActions(game.board).length === 0;
-  if (!game.gameOver) game.currentPlayer = actor === 0 ? 1 : 0;
+  if (!game.gameOver && game.mode === "local") game.currentPlayer = actor === 0 ? 1 : 0;
   return { ok: true, score: result.score, lines: result.lines, gameOver: game.gameOver };
 }
 

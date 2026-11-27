@@ -1,7 +1,8 @@
-import { createGame, determineWinner, getLegalActions, playMove } from "./game.js";
+import { createGame, getLegalActions, playMove } from "./game.js";
 import { loadBrowserDQN } from "./dqn.js";
 
 const COLORS = ["", "Ruby red", "Emerald green", "Sapphire blue", "Topaz yellow", "Amethyst purple", "Aquamarine cyan", "Amber orange"];
+const SPAWN_COUNTS = { Easy: 1, Medium: 2, Hard: 3 };
 const boardElement = document.querySelector("#board");
 const toastElement = document.querySelector("#toast");
 const boardNote = document.querySelector("#board-note");
@@ -11,10 +12,12 @@ const cellButtons = [];
 
 let dqn = null;
 let game = null;
-let mode = "ai";
 let difficulty = "Easy";
 let colorCount = 2;
 let busy = false;
+let paused = false;
+let scheduledMove = null;
+let runToken = 0;
 let toastTimer = 0;
 
 for (let index = 0; index < 81; index += 1) {
@@ -24,7 +27,7 @@ for (let index = 0; index < 81; index += 1) {
   cell.setAttribute("role", "gridcell");
   cell.dataset.index = String(index);
   cell.setAttribute("aria-label", `Row ${Math.floor(index / 9) + 1}, column ${(index % 9) + 1}, empty`);
-  cell.addEventListener("click", () => handleCellClick(index));
+  cell.disabled = true;
   boardElement.append(cell);
   cellButtons.push(cell);
 }
@@ -34,132 +37,107 @@ function showToast(message, isError = false) {
   toastElement.classList.toggle("error", isError);
   toastElement.classList.add("visible");
   window.clearTimeout(toastTimer);
-  toastTimer = window.setTimeout(() => toastElement.classList.remove("visible"), 3000);
-}
-
-function activePlayerLabel() {
-  if (game?.mode === "local") return game.currentPlayer === 0 ? "PLAYER 1 TURN" : "PLAYER 2 TURN";
-  return game?.currentPlayer === 0 ? "YOUR TURN" : "DQN IS THINKING";
-}
-
-function render() {
-  const active = Boolean(game);
-  const aiTurn = active && game.mode === "ai" && game.currentPlayer === 1;
-  cellButtons.forEach((cell, index) => {
-    const color = active ? game.board[index] : 0;
-    cell.replaceChildren();
-    cell.classList.toggle("selected", active && game.selected === index);
-    cell.classList.toggle(
-      "last-move",
-      active && game.lastMove && (game.lastMove.source === index || game.lastMove.destination === index),
-    );
-    cell.classList.toggle("clearing", Boolean(active && game.lastMove?.cleared.includes(index) && busy));
-    cell.disabled = !active || game.gameOver || busy || aiTurn;
-    if (color) {
-      const orb = document.createElement("span");
-      orb.className = `orb color-${color}`;
-      cell.append(orb);
-    }
-    const selected = active && game.selected === index;
-    cell.setAttribute(
-      "aria-label",
-      `Row ${Math.floor(index / 9) + 1}, column ${(index % 9) + 1}, ${color ? COLORS[color] : "empty"}${selected ? ", selected" : ""}`,
-    );
-  });
-
-  document.querySelector("#restart-button").disabled = !active || busy;
-  document.querySelector("#player-one-score").textContent = String(active ? game.scores[0] : 0).padStart(2, "0");
-  document.querySelector("#player-two-score").textContent = String(active ? game.scores[1] : 0).padStart(2, "0");
-  document.querySelector("#best-line").textContent = active && game.bestLine ? `${game.bestLine} ORBS` : "—";
-  document.querySelector("#player-one-name").textContent = active && game.mode === "local" ? "PLAYER 1" : "YOU";
-  document.querySelector("#player-two-name").textContent = active && game.mode === "local" ? "PLAYER 2" : "DQN";
-  document.querySelector("#player-one-caption").textContent = active && game.mode === "local" ? "GREEN ORBS" : "YOUR POINTS";
-  document.querySelector("#player-two-caption").textContent = active && game.mode === "local" ? "ORANGE ORBS" : "AGENT POINTS";
-  document.querySelector("#score-player-one").classList.toggle("active", !active || game.currentPlayer === 0);
-  document.querySelector("#score-player-two").classList.toggle("active", Boolean(active && game.currentPlayer === 1));
-
-  const turnLabel = document.querySelector("#turn-label");
-  const turnIndicator = document.querySelector("#turn-indicator");
-  const gameStateLabel = document.querySelector("#game-state-label");
-  turnIndicator.classList.toggle("live", active && !game.gameOver && !aiTurn && !busy);
-  turnIndicator.classList.toggle("thinking", Boolean(active && (aiTurn || busy)));
-  if (!active) {
-    turnLabel.textContent = "Choose your game";
-    gameStateLabel.textContent = "READY";
-  } else if (game.gameOver) {
-    const winner = determineWinner(game.scores);
-    turnLabel.textContent = winner === null ? "A perfect tie" : winner === 0 ? (game.mode === "local" ? "Player 1 wins" : "You win") : (game.mode === "local" ? "Player 2 wins" : "DQN takes it");
-    gameStateLabel.textContent = "GAME OVER";
-  } else {
-    turnLabel.textContent = busy ? "DQN is thinking…" : activePlayerLabel();
-    gameStateLabel.textContent = busy ? "AI TURN" : "IN PLAY";
-  }
-  gameStateLabel.classList.toggle("in-game", active && !game.gameOver);
-  if (active && game.lastMove) {
-    const from = coordinate(game.lastMove.source);
-    const to = coordinate(game.lastMove.destination);
-    boardNote.textContent = game.lastMove.score
-      ? `${game.lastMove.score} points · ${game.lastMove.lineLength || game.bestLine} connected`
-      : `Moved ${from} → ${to} · new orbs spawned`;
-  } else {
-    boardNote.textContent = "Connect five or more orbs of the same color";
-  }
+  toastTimer = window.setTimeout(() => toastElement.classList.remove("visible"), 3500);
 }
 
 function coordinate(index) {
   return `${String.fromCharCode(65 + (index % 9))}${Math.floor(index / 9) + 1}`;
 }
 
-function handleCellClick(index) {
-  if (!game || busy || game.gameOver || (game.mode === "ai" && game.currentPlayer === 1)) return;
-  const color = game.board[index];
-  if (color) {
-    game.selected = game.selected === index ? null : index;
-    render();
+function updateSummary() {
+  const panel = document.querySelector("#summary-panel");
+  if (!game?.gameOver) {
+    panel.hidden = true;
     return;
   }
-  if (game.selected === null) {
-    showToast("Select one of your orbs first.");
-    return;
-  }
-
-  const result = playMove(game, game.selected, index);
-  if (!result.ok) {
-    showToast(result.reason);
-    return;
-  }
-  render();
-  if (result.score) showToast(`Line cleared — +${result.score} points!`);
-  else showToast(`${SPAWN_LABEL[difficulty]} new ${colorCount === 1 ? "orb" : "orbs"} arrived.`);
-  if (game.gameOver) {
-    showToast(gameOverMessage());
-    render();
-    return;
-  }
-  if (game.mode === "ai" && game.currentPlayer === 1) scheduleAIMove();
+  const failed = Boolean(game.runError);
+  panel.hidden = false;
+  document.querySelector("#summary-heading").textContent = failed ? "Run stopped" : "AI game finished";
+  document.querySelector("#summary-result").textContent = failed
+    ? game.runError
+    : `No legal moves remain. The trained DQN scored ${game.scores[0]} points in ${game.turnCount} moves.`;
+  document.querySelector("#summary-score").textContent = String(game.scores[0]);
+  document.querySelector("#summary-moves").textContent = String(game.turnCount);
+  document.querySelector("#summary-lines").textContent = String(game.linesCleared);
+  document.querySelector("#summary-best-line").textContent = game.bestLine ? `${game.bestLine} orbs` : "—";
+  document.querySelector("#summary-difficulty").textContent = game.difficulty;
+  document.querySelector("#summary-colors").textContent = String(game.colorCount);
 }
 
-const SPAWN_LABEL = { Easy: 1, Medium: 2, Hard: 3 };
+function render() {
+  const active = Boolean(game);
+  const route = new Set(active && game.lastMove ? game.lastMove.path : []);
+  cellButtons.forEach((cell, index) => {
+    const color = active ? game.board[index] : 0;
+    cell.replaceChildren();
+    cell.classList.toggle("route", route.has(index) && color === 0);
+    cell.classList.toggle("route-origin", Boolean(active && game.lastMove?.source === index));
+    cell.classList.toggle("route-destination", Boolean(active && game.lastMove?.destination === index));
+    cell.classList.toggle("last-move", Boolean(active && game.lastMove && (game.lastMove.source === index || game.lastMove.destination === index)));
+    cell.classList.toggle("clearing", Boolean(active && game.lastMove?.cleared.includes(index)));
+    cell.disabled = true;
+    if (color) {
+      const orb = document.createElement("span");
+      orb.className = `orb color-${color}`;
+      cell.append(orb);
+    }
+    const routeLabel = active && game.lastMove?.source === index
+      ? ", move source"
+      : active && game.lastMove?.destination === index
+        ? ", move destination"
+        : route.has(index) ? ", glowing move path" : "";
+    cell.setAttribute(
+      "aria-label",
+      `Row ${Math.floor(index / 9) + 1}, column ${(index % 9) + 1}, ${color ? COLORS[color] : "empty"}${routeLabel}`,
+    );
+  });
 
-function gameOverMessage() {
-  const winner = determineWinner(game.scores);
-  if (winner === null) return `Board full — it’s a tie at ${game.scores[0]} each.`;
-  if (game.mode === "local") return `Player ${winner + 1} wins with ${game.scores[winner]} points!`;
-  return winner === 0
-    ? `You win ${game.scores[0]}–${game.scores[1]}!`
-    : `The DQN wins ${game.scores[1]}–${game.scores[0]}. Play again?`;
+  document.querySelector("#ai-score").textContent = String(active ? game.scores[0] : 0).padStart(2, "0");
+  document.querySelector("#move-count").textContent = String(active ? game.turnCount : 0);
+  document.querySelector("#line-count").textContent = String(active ? game.linesCleared : 0);
+  document.querySelector("#best-line").textContent = active && game.bestLine ? `${game.bestLine} ORBS` : "—";
+  document.querySelector("#game-state-label").textContent = !active ? "READY" : game.gameOver ? "FINISHED" : paused ? "PAUSED" : busy ? "AI THINKING" : "IN PLAY";
+  document.querySelector("#turn-label").textContent = !active ? "AI is getting ready" : game.gameOver ? "AI run complete" : paused ? "Autoplay paused" : busy ? "DQN is choosing a move…" : "DQN is playing";
+  document.querySelector("#turn-indicator").classList.toggle("live", Boolean(active && !game.gameOver && !paused && !busy));
+  document.querySelector("#turn-indicator").classList.toggle("thinking", Boolean(active && !game.gameOver && !paused && busy));
+  document.querySelector("#pause-button").textContent = paused ? "RESUME" : "PAUSE";
+  document.querySelector("#pause-button").disabled = !active || game.gameOver;
+  document.querySelector("#restart-button").disabled = !dqn || busy;
+
+  if (active && game.lastMove) {
+    const from = coordinate(game.lastMove.source);
+    const to = coordinate(game.lastMove.destination);
+    boardNote.textContent = game.lastMove.score
+      ? `Line cleared: +${game.lastMove.score} points · ${game.lastMove.lineLength || game.bestLine} connected`
+      : `AI moved ${from} → ${to} · glowing cells show the route`;
+  } else {
+    boardNote.textContent = "The AI’s move path will appear here.";
+  }
+  updateSummary();
 }
 
-function scheduleAIMove() {
-  busy = true;
+function stopScheduledMove() {
+  runToken += 1;
+  if (scheduledMove !== null) window.clearTimeout(scheduledMove);
+  scheduledMove = null;
+  busy = false;
+}
+
+function scheduleAIMove(delay = 450) {
+  if (!game || game.gameOver || paused) return;
+  stopScheduledMove();
+  const token = runToken;
   render();
-  window.setTimeout(() => {
+  scheduledMove = window.setTimeout(() => {
+    scheduledMove = null;
+    if (token !== runToken || !game || game.gameOver || paused) return;
     try {
-      if (!game || game.gameOver || game.mode !== "ai" || game.currentPlayer !== 1) return;
-      if (!dqn) throw new Error("The trained DQN is unavailable. Try a local two-player game.");
+      busy = true;
+      render();
       const legalActions = getLegalActions(game.board);
       if (!legalActions.length) {
         game.gameOver = true;
+        busy = false;
         render();
         return;
       }
@@ -173,48 +151,65 @@ function scheduleAIMove() {
       const result = playMove(game, source, destination);
       if (!result.ok) throw new Error(`The DQN selected an invalid move: ${result.reason}`);
       if (result.score) showToast(`DQN clears a line — +${result.score} points.`);
-    } catch (error) {
-      showToast(error.message, true);
-      if (game) game.gameOver = true;
-    } finally {
       busy = false;
       render();
-      if (game?.gameOver) showToast(gameOverMessage());
+      if (game.gameOver) {
+        return;
+      }
+      scheduleAIMove(750);
+    } catch (error) {
+      game.runError = error instanceof Error ? error.message : String(error);
+      game.gameOver = true;
+      busy = false;
+      showToast(game.runError, true);
+      render();
     }
-  }, 420);
+  }, delay);
 }
 
 function startGame() {
-  if (mode === "ai" && !dqn) {
+  if (!dqn) {
     showToast("The trained DQN is still loading. Try again in a moment.", true);
     return;
   }
-  game = createGame({ mode, difficulty, colorCount });
-  busy = false;
+  stopScheduledMove();
+  paused = false;
+  game = createGame({ mode: "ai", difficulty, colorCount });
+  document.querySelector("#setup-page").hidden = true;
+  document.querySelector("#game-page").hidden = false;
+  document.querySelector("#setup-link").classList.remove("active");
   render();
-  showToast(mode === "ai" ? "Game on. The DQN will take every other turn." : "Game on. Pass the keyboard after each move.");
-  document.querySelector("#board").scrollIntoView({ behavior: "smooth", block: "nearest" });
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  scheduleAIMove(650);
 }
 
-document.querySelectorAll("[data-mode]").forEach((button) => {
-  button.addEventListener("click", () => {
-    mode = button.dataset.mode;
-    document.querySelectorAll("[data-mode]").forEach((option) => {
-      const selected = option === button;
-      option.classList.toggle("selected", selected);
-      option.setAttribute("aria-pressed", String(selected));
-    });
-    document.querySelector("#start-button").disabled = mode === "ai" && !dqn;
-    document.querySelector("#mode-note").textContent = mode === "ai"
-      ? "A score-maximizing DQN policy, running right here in your browser."
-      : "Two players share the board and take turns. Highest score wins.";
-  });
-});
+function returnToSetup() {
+  stopScheduledMove();
+  paused = false;
+  document.querySelector("#game-page").hidden = true;
+  document.querySelector("#setup-page").hidden = false;
+  document.querySelector("#setup-link").classList.add("active");
+  render();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function togglePause() {
+  if (!game || game.gameOver) return;
+  if (paused) {
+    paused = false;
+    scheduleAIMove(180);
+  } else {
+    paused = true;
+    stopScheduledMove();
+    render();
+  }
+}
 
 document.querySelectorAll("[data-difficulty]").forEach((button) => {
   button.addEventListener("click", () => {
     difficulty = button.dataset.difficulty;
     document.querySelector("#difficulty-value").textContent = difficulty.toUpperCase();
+    document.querySelector("#difficulty-hint").textContent = `${SPAWN_COUNTS[difficulty]} new ${SPAWN_COUNTS[difficulty] === 1 ? "orb appears" : "orbs appear"} after a move.`;
     document.querySelectorAll("[data-difficulty]").forEach((option) => {
       option.setAttribute("aria-pressed", String(option === button));
     });
@@ -227,12 +222,9 @@ document.querySelector("#color-count").addEventListener("input", (event) => {
 });
 document.querySelector("#start-button").addEventListener("click", startGame);
 document.querySelector("#restart-button").addEventListener("click", startGame);
-document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && game?.selected !== null) {
-    game.selected = null;
-    render();
-  }
-});
+document.querySelector("#play-again-button").addEventListener("click", startGame);
+document.querySelector("#back-button").addEventListener("click", returnToSetup);
+document.querySelector("#pause-button").addEventListener("click", togglePause);
 
 render();
 loadBrowserDQN().then((model) => {
@@ -240,13 +232,12 @@ loadBrowserDQN().then((model) => {
   statusDot.classList.remove("loading", "error");
   modelStatus.textContent = "DQN READY · IN BROWSER";
   document.querySelector("#start-button").disabled = false;
-  document.querySelector("#mode-note").textContent = `Trained ${model.meta.runId} · ${Number(model.meta.environmentSteps).toLocaleString()} training steps · runs in your browser.`;
+  document.querySelector("#restart-button").disabled = false;
+  document.querySelector("#mode-note").textContent = `Trained ${model.meta.runId} · ${Number(model.meta.environmentSteps).toLocaleString()} training steps · runs locally in your browser.`;
 }).catch((error) => {
   statusDot.classList.add("error");
   statusDot.classList.remove("loading");
   modelStatus.textContent = "DQN UNAVAILABLE";
-  document.querySelector('[data-mode="ai"]').disabled = true;
-  document.querySelector("#start-button").disabled = mode === "ai";
-  document.querySelector("#mode-note").textContent = "Model load failed. Local two-player mode remains available.";
+  document.querySelector("#mode-note").textContent = "Model load failed. Refresh the page to retry.";
   showToast(error.message, true);
 });

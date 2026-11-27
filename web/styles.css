@@ -93,7 +93,9 @@ h1 em { color: var(--lime); font-style: normal; }
 .icon-button svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 
 .board-frame { padding: clamp(8px, 1.8vw, 15px); border: 1px solid #41483d; border-radius: 12px; background: linear-gradient(145deg, #30372d, #222720); box-shadow: 0 22px 65px rgba(0, 0, 0, .22), inset 0 1px 0 rgba(255,255,255,.035); }
-.board { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: clamp(3px, .55vw, 6px); padding: clamp(5px, .9vw, 8px); border-radius: 7px; background: var(--board); }
+.board { position: relative; display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: clamp(3px, .55vw, 6px); padding: clamp(5px, .9vw, 8px); border-radius: 7px; background: var(--board); }
+.moving-orb-layer { position: absolute; z-index: 5; inset: 0; overflow: hidden; border-radius: inherit; pointer-events: none; }
+.moving-orb-layer .orb.in-transit { z-index: 1; animation: none !important; }
 .cell { display: grid; place-items: center; min-width: 0; aspect-ratio: 1; padding: 0; border: 1px solid rgba(228, 238, 215, .055); border-radius: 5px; background: var(--cell); cursor: pointer; transition: background .13s ease, border-color .13s ease, transform .13s ease; }
 .cell:hover:not(:disabled) { z-index: 1; background: var(--cell-hover); border-color: rgba(185, 239, 115, .42); }
 .cell:disabled { cursor: default; }
@@ -209,7 +211,6 @@ h1 em { color: var(--lime); font-style: normal; }
 .board .cell.route-origin { background: #514137; border-color: rgba(233,151,97,.72); }
 .board .cell.route-destination { background: #46513a; border-color: var(--lime); box-shadow: 0 0 13px rgba(185,239,115,.42); }
 .board .cell.move-current { z-index: 1; border-color: var(--lime); box-shadow: 0 0 16px rgba(185,239,115,.42), inset 0 0 12px rgba(185,239,115,.18); }
-.orb.in-transit { animation: travelPulse .42s ease-in-out infinite alternate; }
 .board-footer { display: grid; justify-content: stretch; gap: 9px; padding: 13px 3px 0; }
 .move-guide { display: flex; align-items: center; gap: 8px; color: var(--muted); line-height: 1.5; }
 .move-guide strong { flex: 0 0 auto; color: var(--paper); font: 8px var(--mono); letter-spacing: .06em; }
@@ -264,7 +265,6 @@ h1 em { color: var(--lime); font-style: normal; }
 
 @keyframes pulse { 50% { opacity: .4; } }
 @keyframes pop { from { transform: scale(.2); opacity: .25; } to { transform: scale(1); opacity: 1; } }
-@keyframes travelPulse { from { transform: scale(.8); filter: brightness(1); } to { transform: scale(1.06); filter: brightness(1.35); } }
 @keyframes clear { 55% { transform: scale(1.16); filter: brightness(1.8); } to { transform: scale(0); opacity: 0; } }
 
 @media (max-width: 900px) {

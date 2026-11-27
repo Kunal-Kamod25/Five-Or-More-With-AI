@@ -21,6 +21,7 @@ let busy = false;
 let paused = false;
 let scheduledMove = null;
 let animationTimer = null;
+let animationFrame = null;
 let moveAnimation = null;
 let runToken = 0;
 let toastTimer = 0;
@@ -36,6 +37,11 @@ for (let index = 0; index < 81; index += 1) {
   boardElement.append(cell);
   cellButtons.push(cell);
 }
+
+const movingOrbLayer = document.createElement("div");
+movingOrbLayer.className = "moving-orb-layer";
+movingOrbLayer.setAttribute("aria-hidden", "true");
+boardElement.append(movingOrbLayer);
 
 function showToast(message, isError = false) {
   toastElement.textContent = message;
@@ -75,30 +81,19 @@ function render() {
   const route = new Set(displayedPath);
   const movingCell = moveAnimation ? moveAnimation.path[moveAnimation.step] : null;
   cellButtons.forEach((cell, index) => {
-    let color = active ? game.board[index] : 0;
-    if (moveAnimation) {
-      if (index === moveAnimation.source) color = 0;
-      if (index === movingCell) color = moveAnimation.color;
-    }
-    const movingOrb = moveAnimation?.orbElement;
+    const color = active ? game.board[index] : 0;
     let orb = cell.querySelector(".orb");
     if (color === 0) {
-      if (orb && orb !== movingOrb) orb.remove();
-    } else if (orb !== movingOrb && orb?.dataset.color !== String(color)) {
+      orb?.remove();
+    } else if (orb?.dataset.color !== String(color)) {
       orb?.remove();
       orb = null;
     }
-    if (index === movingCell && movingOrb) {
-      cell.append(movingOrb);
-      movingOrb.classList.add("in-transit");
-      orb = movingOrb;
-    } else if (color && !orb) {
+    if (color && !orb && moveAnimation?.source !== index) {
       orb = document.createElement("span");
       orb.className = `orb color-${color}`;
       orb.dataset.color = String(color);
       cell.append(orb);
-    } else if (orb && orb !== movingOrb) {
-      orb.classList.remove("in-transit");
     }
     cell.classList.toggle("route", route.has(index) && color === 0);
     cell.classList.toggle("route-origin", Boolean(moveAnimation ? moveAnimation.source === index : active && game.lastMove?.source === index));
@@ -150,19 +145,41 @@ function stopScheduledMove() {
   runToken += 1;
   if (scheduledMove !== null) window.clearTimeout(scheduledMove);
   if (animationTimer !== null) window.clearTimeout(animationTimer);
+  if (animationFrame !== null) window.cancelAnimationFrame(animationFrame);
+  if (moveAnimation?.orbElement) {
+    moveAnimation.orbElement.classList.remove("in-transit");
+    moveAnimation.orbElement.removeAttribute("style");
+    cellButtons[moveAnimation.source].append(moveAnimation.orbElement);
+  }
+  movingOrbLayer.replaceChildren();
   scheduledMove = null;
   animationTimer = null;
+  animationFrame = null;
   moveAnimation = null;
   busy = false;
+}
+
+function positionMovingOrb(index, xOffset = 0, yOffset = 0) {
+  const layerRect = movingOrbLayer.getBoundingClientRect();
+  const cellRect = cellButtons[index].getBoundingClientRect();
+  const x = cellRect.left - layerRect.left + (cellRect.width - moveAnimation.orbElement.offsetWidth) / 2 + xOffset;
+  const y = cellRect.top - layerRect.top + (cellRect.height - moveAnimation.orbElement.offsetHeight) / 2 + yOffset;
+  moveAnimation.orbElement.style.transform = `translate3d(${x}px, ${y}px, 0)`;
 }
 
 function completeAnimatedMove(token) {
   if (token !== runToken || !game || !moveAnimation) return;
   const { source, destination } = moveAnimation;
-  moveAnimation = null;
-  animationTimer = null;
+  const orb = moveAnimation.orbElement;
   const result = playMove(game, source, destination);
   if (!result.ok) throw new Error(`The DQN selected an invalid move: ${result.reason}`);
+  orb.classList.remove("in-transit");
+  orb.removeAttribute("style");
+  if (result.score && game.lastMove.cleared.includes(destination)) orb.remove();
+  else cellButtons[destination].append(orb);
+  movingOrbLayer.replaceChildren();
+  moveAnimation = null;
+  animationTimer = null;
   busy = false;
   if (result.score) showToast(`DQN clears a line — +${result.score} points.`);
   render();
@@ -171,14 +188,41 @@ function completeAnimatedMove(token) {
 
 function animateMove(token) {
   if (token !== runToken || !moveAnimation || paused) return;
-  if (moveAnimation.step < moveAnimation.path.length - 1) {
-    animationTimer = window.setTimeout(() => {
-      animationTimer = null;
+  if (!moveAnimation.segment && moveAnimation.step < moveAnimation.path.length - 1) {
+    const from = moveAnimation.path[moveAnimation.step];
+    const to = moveAnimation.path[moveAnimation.step + 1];
+    const fromRect = cellButtons[from].getBoundingClientRect();
+    const toRect = cellButtons[to].getBoundingClientRect();
+    moveAnimation.segment = {
+      from,
+      to,
+      fromX: 0,
+      fromY: 0,
+      toX: toRect.left - fromRect.left,
+      toY: toRect.top - fromRect.top,
+      startedAt: performance.now() - (moveAnimation.elapsed || 0),
+    };
+    moveAnimation.step += 1;
+    moveAnimation.elapsed = 0;
+  }
+  if (moveAnimation.segment) {
+    const segment = moveAnimation.segment;
+    const frame = (now) => {
+      animationFrame = null;
       if (token !== runToken || !moveAnimation || paused) return;
-      moveAnimation.step += 1;
+      const progress = Math.min(1, (now - segment.startedAt) / MOVE_STEP_MS);
+      const eased = progress * progress * (3 - 2 * progress);
+      positionMovingOrb(segment.from, segment.toX * eased, segment.toY * eased);
+      if (progress < 1) {
+        animationFrame = window.requestAnimationFrame(frame);
+        return;
+      }
+      moveAnimation.segment = null;
+      moveAnimation.elapsed = 0;
       render();
       animateMove(token);
-    }, MOVE_STEP_MS);
+    };
+    animationFrame = window.requestAnimationFrame(frame);
     return;
   }
   animationTimer = window.setTimeout(() => {
@@ -231,6 +275,21 @@ function scheduleAIMove(delay = 450) {
         orbElement: cellButtons[source].querySelector(".orb"),
       };
       if (!moveAnimation.orbElement) throw new Error("The DQN's selected orb is missing from the board.");
+      const sourceRect = cellButtons[source].getBoundingClientRect();
+      const orb = moveAnimation.orbElement;
+      orb.style.position = "absolute";
+      orb.style.left = "0";
+      orb.style.top = "0";
+      orb.style.width = `${sourceRect.width * 0.68}px`;
+      orb.style.height = `${sourceRect.height * 0.68}px`;
+      orb.style.margin = "0";
+      orb.style.animation = "none";
+      orb.style.transition = "none";
+      orb.classList.add("in-transit");
+      movingOrbLayer.append(orb);
+      positionMovingOrb(source);
+      void orb.offsetWidth;
+      orb.style.transition = "";
       render();
       animateMove(token);
     } catch (error) {
@@ -274,6 +333,9 @@ function togglePause() {
   if (paused) {
     paused = false;
     if (moveAnimation) {
+      if (moveAnimation.segment) {
+        moveAnimation.segment.startedAt = performance.now() - moveAnimation.elapsed;
+      }
       render();
       animateMove(runToken);
     } else {
@@ -283,6 +345,11 @@ function togglePause() {
     paused = true;
     if (scheduledMove !== null) window.clearTimeout(scheduledMove);
     if (animationTimer !== null) window.clearTimeout(animationTimer);
+    if (animationFrame !== null && moveAnimation?.segment) {
+      window.cancelAnimationFrame(animationFrame);
+      animationFrame = null;
+      moveAnimation.elapsed = Math.min(MOVE_STEP_MS, performance.now() - moveAnimation.segment.startedAt);
+    }
     scheduledMove = null;
     animationTimer = null;
     render();

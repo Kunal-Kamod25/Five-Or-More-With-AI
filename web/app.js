@@ -80,7 +80,26 @@ function render() {
       if (index === moveAnimation.source) color = 0;
       if (index === movingCell) color = moveAnimation.color;
     }
-    cell.replaceChildren();
+    const movingOrb = moveAnimation?.orbElement;
+    let orb = cell.querySelector(".orb");
+    if (color === 0) {
+      if (orb && orb !== movingOrb) orb.remove();
+    } else if (orb !== movingOrb && orb?.dataset.color !== String(color)) {
+      orb?.remove();
+      orb = null;
+    }
+    if (index === movingCell && movingOrb) {
+      cell.append(movingOrb);
+      movingOrb.classList.add("in-transit");
+      orb = movingOrb;
+    } else if (color && !orb) {
+      orb = document.createElement("span");
+      orb.className = `orb color-${color}`;
+      orb.dataset.color = String(color);
+      cell.append(orb);
+    } else if (orb && orb !== movingOrb) {
+      orb.classList.remove("in-transit");
+    }
     cell.classList.toggle("route", route.has(index) && color === 0);
     cell.classList.toggle("route-origin", Boolean(moveAnimation ? moveAnimation.source === index : active && game.lastMove?.source === index));
     cell.classList.toggle("route-destination", Boolean(moveAnimation ? moveAnimation.destination === index : active && game.lastMove?.destination === index));
@@ -88,11 +107,6 @@ function render() {
     cell.classList.toggle("last-move", Boolean(!moveAnimation && active && game.lastMove && (game.lastMove.source === index || game.lastMove.destination === index)));
     cell.classList.toggle("clearing", Boolean(active && game.lastMove?.cleared.includes(index)));
     cell.disabled = true;
-    if (color) {
-      const orb = document.createElement("span");
-      orb.className = `orb color-${color}${movingCell === index ? " in-transit" : ""}`;
-      cell.append(orb);
-    }
     let routeLabel = "";
     if (moveAnimation?.source === index) routeLabel = ", moving orb source";
     else if (moveAnimation?.destination === index) routeLabel = ", AI move destination";
@@ -208,7 +222,15 @@ function scheduleAIMove(delay = 450) {
       const destination = action % 81;
       const path = findPath(game.board, source, destination);
       if (!path) throw new Error("The DQN selected a move without a clear path.");
-      moveAnimation = { source, destination, color: game.board[source], path, step: 0 };
+      moveAnimation = {
+        source,
+        destination,
+        color: game.board[source],
+        path,
+        step: 0,
+        orbElement: cellButtons[source].querySelector(".orb"),
+      };
+      if (!moveAnimation.orbElement) throw new Error("The DQN's selected orb is missing from the board.");
       render();
       animateMove(token);
     } catch (error) {

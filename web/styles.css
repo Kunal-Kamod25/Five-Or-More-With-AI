@@ -208,6 +208,8 @@ h1 em { color: var(--lime); font-style: normal; }
 .board .cell.route { background: #394734; border-color: rgba(185,239,115,.46); box-shadow: inset 0 0 12px rgba(185,239,115,.12), 0 0 8px rgba(185,239,115,.12); }
 .board .cell.route-origin { background: #514137; border-color: rgba(233,151,97,.72); }
 .board .cell.route-destination { background: #46513a; border-color: var(--lime); box-shadow: 0 0 13px rgba(185,239,115,.42); }
+.board .cell.move-current { z-index: 1; border-color: var(--lime); box-shadow: 0 0 16px rgba(185,239,115,.42), inset 0 0 12px rgba(185,239,115,.18); }
+.orb.in-transit { animation: travelPulse .42s ease-in-out infinite alternate; }
 .board-footer { display: grid; justify-content: stretch; gap: 9px; padding: 13px 3px 0; }
 .move-guide { display: flex; align-items: center; gap: 8px; color: var(--muted); line-height: 1.5; }
 .move-guide strong { flex: 0 0 auto; color: var(--paper); font: 8px var(--mono); letter-spacing: .06em; }
@@ -262,6 +264,7 @@ h1 em { color: var(--lime); font-style: normal; }
 
 @keyframes pulse { 50% { opacity: .4; } }
 @keyframes pop { from { transform: scale(.2); opacity: .25; } to { transform: scale(1); opacity: 1; } }
+@keyframes travelPulse { from { transform: scale(.8); filter: brightness(1); } to { transform: scale(1.06); filter: brightness(1.35); } }
 @keyframes clear { 55% { transform: scale(1.16); filter: brightness(1.8); } to { transform: scale(0); opacity: 0; } }
 
 @media (max-width: 900px) {

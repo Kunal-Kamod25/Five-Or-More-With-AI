@@ -1,8 +1,11 @@
-import { createGame, getLegalActions, playMove } from "./game.js";
+import { createGame, findPath, getLegalActions, playMove } from "./game.js";
 import { loadBrowserDQN } from "./dqn.js";
 
 const COLORS = ["", "Ruby red", "Emerald green", "Sapphire blue", "Topaz yellow", "Amethyst purple", "Aquamarine cyan", "Amber orange"];
 const SPAWN_COUNTS = { Easy: 1, Medium: 2, Hard: 3 };
+const MOVE_STEP_MS = 320;
+const DESTINATION_HOLD_MS = 550;
+const BETWEEN_MOVES_MS = 1100;
 const boardElement = document.querySelector("#board");
 const toastElement = document.querySelector("#toast");
 const boardNote = document.querySelector("#board-note");
@@ -17,6 +20,8 @@ let colorCount = 2;
 let busy = false;
 let paused = false;
 let scheduledMove = null;
+let animationTimer = null;
+let moveAnimation = null;
 let runToken = 0;
 let toastTimer = 0;
 
@@ -66,26 +71,35 @@ function updateSummary() {
 
 function render() {
   const active = Boolean(game);
-  const route = new Set(active && game.lastMove ? game.lastMove.path : []);
+  const displayedPath = moveAnimation?.path ?? (active && game.lastMove ? game.lastMove.path : []);
+  const route = new Set(displayedPath);
+  const movingCell = moveAnimation ? moveAnimation.path[moveAnimation.step] : null;
   cellButtons.forEach((cell, index) => {
-    const color = active ? game.board[index] : 0;
+    let color = active ? game.board[index] : 0;
+    if (moveAnimation) {
+      if (index === moveAnimation.source) color = 0;
+      if (index === movingCell) color = moveAnimation.color;
+    }
     cell.replaceChildren();
     cell.classList.toggle("route", route.has(index) && color === 0);
-    cell.classList.toggle("route-origin", Boolean(active && game.lastMove?.source === index));
-    cell.classList.toggle("route-destination", Boolean(active && game.lastMove?.destination === index));
-    cell.classList.toggle("last-move", Boolean(active && game.lastMove && (game.lastMove.source === index || game.lastMove.destination === index)));
+    cell.classList.toggle("route-origin", Boolean(moveAnimation ? moveAnimation.source === index : active && game.lastMove?.source === index));
+    cell.classList.toggle("route-destination", Boolean(moveAnimation ? moveAnimation.destination === index : active && game.lastMove?.destination === index));
+    cell.classList.toggle("move-current", movingCell === index);
+    cell.classList.toggle("last-move", Boolean(!moveAnimation && active && game.lastMove && (game.lastMove.source === index || game.lastMove.destination === index)));
     cell.classList.toggle("clearing", Boolean(active && game.lastMove?.cleared.includes(index)));
     cell.disabled = true;
     if (color) {
       const orb = document.createElement("span");
-      orb.className = `orb color-${color}`;
+      orb.className = `orb color-${color}${movingCell === index ? " in-transit" : ""}`;
       cell.append(orb);
     }
-    const routeLabel = active && game.lastMove?.source === index
-      ? ", move source"
-      : active && game.lastMove?.destination === index
-        ? ", move destination"
-        : route.has(index) ? ", glowing move path" : "";
+    let routeLabel = "";
+    if (moveAnimation?.source === index) routeLabel = ", moving orb source";
+    else if (moveAnimation?.destination === index) routeLabel = ", AI move destination";
+    else if (movingCell === index) routeLabel = ", orb moving along path";
+    else if (route.has(index)) routeLabel = ", glowing move path";
+    else if (active && game.lastMove?.source === index) routeLabel = ", move source";
+    else if (active && game.lastMove?.destination === index) routeLabel = ", move destination";
     cell.setAttribute(
       "aria-label",
       `Row ${Math.floor(index / 9) + 1}, column ${(index % 9) + 1}, ${color ? COLORS[color] : "empty"}${routeLabel}`,
@@ -97,14 +111,16 @@ function render() {
   document.querySelector("#line-count").textContent = String(active ? game.linesCleared : 0);
   document.querySelector("#best-line").textContent = active && game.bestLine ? `${game.bestLine} ORBS` : "—";
   document.querySelector("#game-state-label").textContent = !active ? "READY" : game.gameOver ? "FINISHED" : paused ? "PAUSED" : busy ? "AI THINKING" : "IN PLAY";
-  document.querySelector("#turn-label").textContent = !active ? "AI is getting ready" : game.gameOver ? "AI run complete" : paused ? "Autoplay paused" : busy ? "DQN is choosing a move…" : "DQN is playing";
+  document.querySelector("#turn-label").textContent = !active ? "AI is getting ready" : game.gameOver ? "AI run complete" : paused ? "Autoplay paused" : moveAnimation ? `Moving ${coordinate(movingCell)}…` : busy ? "DQN is choosing a move…" : "DQN is playing";
   document.querySelector("#turn-indicator").classList.toggle("live", Boolean(active && !game.gameOver && !paused && !busy));
   document.querySelector("#turn-indicator").classList.toggle("thinking", Boolean(active && !game.gameOver && !paused && busy));
   document.querySelector("#pause-button").textContent = paused ? "RESUME" : "PAUSE";
   document.querySelector("#pause-button").disabled = !active || game.gameOver;
   document.querySelector("#restart-button").disabled = !dqn || busy;
 
-  if (active && game.lastMove) {
+  if (moveAnimation) {
+    boardNote.textContent = `Moving ${COLORS[moveAnimation.color]} orb ${coordinate(moveAnimation.source)} → ${coordinate(moveAnimation.destination)} · one cell at a time`;
+  } else if (active && game.lastMove) {
     const from = coordinate(game.lastMove.source);
     const to = coordinate(game.lastMove.destination);
     boardNote.textContent = game.lastMove.score
@@ -119,8 +135,50 @@ function render() {
 function stopScheduledMove() {
   runToken += 1;
   if (scheduledMove !== null) window.clearTimeout(scheduledMove);
+  if (animationTimer !== null) window.clearTimeout(animationTimer);
   scheduledMove = null;
+  animationTimer = null;
+  moveAnimation = null;
   busy = false;
+}
+
+function completeAnimatedMove(token) {
+  if (token !== runToken || !game || !moveAnimation) return;
+  const { source, destination } = moveAnimation;
+  moveAnimation = null;
+  animationTimer = null;
+  const result = playMove(game, source, destination);
+  if (!result.ok) throw new Error(`The DQN selected an invalid move: ${result.reason}`);
+  busy = false;
+  if (result.score) showToast(`DQN clears a line — +${result.score} points.`);
+  render();
+  if (!game.gameOver) scheduleAIMove(BETWEEN_MOVES_MS);
+}
+
+function animateMove(token) {
+  if (token !== runToken || !moveAnimation || paused) return;
+  if (moveAnimation.step < moveAnimation.path.length - 1) {
+    animationTimer = window.setTimeout(() => {
+      animationTimer = null;
+      if (token !== runToken || !moveAnimation || paused) return;
+      moveAnimation.step += 1;
+      render();
+      animateMove(token);
+    }, MOVE_STEP_MS);
+    return;
+  }
+  animationTimer = window.setTimeout(() => {
+    animationTimer = null;
+    try {
+      completeAnimatedMove(token);
+    } catch (error) {
+      game.runError = error instanceof Error ? error.message : String(error);
+      game.gameOver = true;
+      busy = false;
+      showToast(game.runError, true);
+      render();
+    }
+  }, DESTINATION_HOLD_MS);
 }
 
 function scheduleAIMove(delay = 450) {
@@ -148,15 +206,11 @@ function scheduleAIMove(delay = 450) {
       if (action === null) throw new Error("The DQN could not select a legal move.");
       const source = Math.floor(action / 81);
       const destination = action % 81;
-      const result = playMove(game, source, destination);
-      if (!result.ok) throw new Error(`The DQN selected an invalid move: ${result.reason}`);
-      if (result.score) showToast(`DQN clears a line — +${result.score} points.`);
-      busy = false;
+      const path = findPath(game.board, source, destination);
+      if (!path) throw new Error("The DQN selected a move without a clear path.");
+      moveAnimation = { source, destination, color: game.board[source], path, step: 0 };
       render();
-      if (game.gameOver) {
-        return;
-      }
-      scheduleAIMove(750);
+      animateMove(token);
     } catch (error) {
       game.runError = error instanceof Error ? error.message : String(error);
       game.gameOver = true;
@@ -197,10 +251,18 @@ function togglePause() {
   if (!game || game.gameOver) return;
   if (paused) {
     paused = false;
-    scheduleAIMove(180);
+    if (moveAnimation) {
+      render();
+      animateMove(runToken);
+    } else {
+      scheduleAIMove(500);
+    }
   } else {
     paused = true;
-    stopScheduledMove();
+    if (scheduledMove !== null) window.clearTimeout(scheduledMove);
+    if (animationTimer !== null) window.clearTimeout(animationTimer);
+    scheduledMove = null;
+    animationTimer = null;
     render();
   }
 }

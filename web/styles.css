@@ -100,16 +100,15 @@ h1 em { color: var(--lime); font-style: normal; }
 .cell:hover:not(:disabled) { z-index: 1; background: var(--cell-hover); border-color: rgba(185, 239, 115, .42); }
 .cell:disabled { cursor: default; }
 .cell.selected { border-color: var(--lime); box-shadow: 0 0 0 2px rgba(185, 239, 115, .27), 0 0 18px rgba(185, 239, 115, .14); background: #414b38; }
-.cell.last-move { border-color: rgba(233, 151, 97, .45); }
 .orb { width: 68%; height: 68%; border-radius: 50%; position: relative; background: var(--orb-color); box-shadow: inset -4px -5px 8px rgba(0,0,0,.24), inset 2px 3px 4px rgba(255,255,255,.35), 0 3px 6px rgba(0,0,0,.28); animation: pop .2s ease-out both; }
 .orb::after { content: ""; position: absolute; top: 17%; left: 21%; width: 25%; height: 17%; border-radius: 50%; background: rgba(255,255,255,.54); filter: blur(1px); transform: rotate(-35deg); }
-.orb.color-1 { --orb-color: #ef786c; }
-.orb.color-2 { --orb-color: #b9ef73; }
-.orb.color-3 { --orb-color: #8cbfca; }
-.orb.color-4 { --orb-color: #e9c66c; }
-.orb.color-5 { --orb-color: #ba93d3; }
-.orb.color-6 { --orb-color: #65c5bc; }
-.orb.color-7 { --orb-color: #e99761; }
+.orb.color-1 { --orb-color: #ff435a; }
+.orb.color-2 { --orb-color: #a8ed2a; }
+.orb.color-3 { --orb-color: #4e79ff; }
+.orb.color-4 { --orb-color: #ffd740; }
+.orb.color-5 { --orb-color: #bd68ff; }
+.orb.color-6 { --orb-color: #00d9d4; }
+.orb.color-7 { --orb-color: #ff9438; }
 .cell.clearing .orb { animation: clear .48s ease both; }
 .board-footer { display: flex; justify-content: space-between; gap: 16px; padding: 12px 3px 0; color: var(--muted); font-size: 10px; }
 .board-footer p { margin: 0; }

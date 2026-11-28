@@ -81,7 +81,7 @@ function updateSummary() {
 function render() {
   const active = Boolean(game);
   const isHuman = active && game.mode === "human";
-  const displayedPath = moveAnimation?.path ?? (active && game.lastMove ? game.lastMove.path : []);
+  const displayedPath = moveAnimation?.pathVisible ? moveAnimation.path : [];
   const route = new Set(displayedPath);
   const movingCell = moveAnimation ? moveAnimation.path[moveAnimation.step] : null;
   cellButtons.forEach((cell, index) => {
@@ -100,20 +100,17 @@ function render() {
       cell.append(orb);
     }
     cell.classList.toggle("route", route.has(index) && color === 0);
-    cell.classList.toggle("route-origin", Boolean(moveAnimation ? moveAnimation.source === index : active && game.lastMove?.source === index));
-    cell.classList.toggle("route-destination", Boolean(moveAnimation ? moveAnimation.destination === index : active && game.lastMove?.destination === index));
-    cell.classList.toggle("move-current", movingCell === index);
+    cell.classList.toggle("route-origin", Boolean(moveAnimation?.pathVisible && moveAnimation.source === index));
+    cell.classList.toggle("route-destination", Boolean(moveAnimation?.pathVisible && moveAnimation.destination === index));
+    cell.classList.toggle("move-current", Boolean(moveAnimation?.pathVisible && movingCell === index));
     cell.classList.toggle("selected", Boolean(isHuman && game.selected === index));
-    cell.classList.toggle("last-move", Boolean(!moveAnimation && active && game.lastMove && (game.lastMove.source === index || game.lastMove.destination === index)));
     cell.classList.toggle("clearing", Boolean(active && game.lastMove?.cleared.includes(index)));
     cell.disabled = !isHuman || game.gameOver || busy;
     let routeLabel = "";
-    if (moveAnimation?.source === index) routeLabel = ", moving orb source";
-    else if (moveAnimation?.destination === index) routeLabel = ", AI move destination";
-    else if (movingCell === index) routeLabel = ", orb moving along path";
+    if (moveAnimation?.pathVisible && moveAnimation.source === index) routeLabel = ", moving orb source";
+    else if (moveAnimation?.pathVisible && moveAnimation.destination === index) routeLabel = ", AI move destination";
+    else if (moveAnimation?.pathVisible && movingCell === index) routeLabel = ", orb moving along path";
     else if (route.has(index)) routeLabel = ", glowing move path";
-    else if (active && game.lastMove?.source === index) routeLabel = ", move source";
-    else if (active && game.lastMove?.destination === index) routeLabel = ", move destination";
     if (isHuman && game.selected === index) routeLabel += ", selected";
     cell.setAttribute(
       "aria-label",
@@ -151,7 +148,7 @@ function render() {
     const to = coordinate(game.lastMove.destination);
     boardNote.textContent = game.lastMove.score
       ? `Line cleared: +${game.lastMove.score} points · ${game.lastMove.lineLength || game.bestLine} connected`
-      : `${isHuman ? "You moved" : "AI moved"} ${from} → ${to} · glowing cells show the route`;
+      : `${isHuman ? "You moved" : "AI moved"} ${from} → ${to}`;
   } else if (isHuman) {
     boardNote.textContent = game.selected === null ? "Select an orb to make your move." : `Selected ${coordinate(game.selected)} · now choose an empty destination.`;
   } else {
@@ -266,11 +263,16 @@ function animateMove(token) {
       }
       moveAnimation.segment = null;
       moveAnimation.elapsed = 0;
+      if (moveAnimation.step >= moveAnimation.path.length - 1) moveAnimation.pathVisible = false;
       render();
       animateMove(token);
     };
     animationFrame = window.requestAnimationFrame(frame);
     return;
+  }
+  if (moveAnimation.pathVisible) {
+    moveAnimation.pathVisible = false;
+    render();
   }
   animationTimer = window.setTimeout(() => {
     animationTimer = null;
@@ -318,6 +320,7 @@ function scheduleAIMove(delay = 450) {
         destination,
         color: game.board[source],
         path,
+        pathVisible: true,
         step: 0,
         orbElement: cellButtons[source].querySelector(".orb"),
       };

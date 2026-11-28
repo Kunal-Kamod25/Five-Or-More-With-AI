@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#111511">
-    <meta name="description" content="Watch a trained DQN play Five or More automatically in your browser.">
+    <meta name="description" content="Play Five or More yourself or watch a trained DQN play automatically in your browser.">
     <title>Five or More — watch the AI play</title>
     <link rel="icon" href="./favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="./styles.css">
@@ -26,23 +26,28 @@
       <main id="setup-page">
         <section class="setup-intro">
           <p class="eyebrow"><span class="eyebrow-line"></span> A CLASSIC, REIMAGINED</p>
-          <h1>Let the AI<br><em>make its move.</em></h1>
-          <p class="intro-text">Watch your trained DQN play Five or More by itself, one move at a time.</p>
+          <h1>Five or More,<br><em>your next move.</em></h1>
+          <p class="intro-text">Play a round yourself or watch your trained DQN play automatically.</p>
         </section>
 
         <section class="setup-card panel" aria-labelledby="setup-title">
           <div class="panel-heading">
             <div>
               <p class="section-kicker">GAME SETUP <span>01 / 02</span></p>
-              <h2 id="setup-title">How do you want to watch?</h2>
+              <h2 id="setup-title">How do you want to play?</h2>
             </div>
           </div>
 
           <div class="mode-options" role="group" aria-label="Play mode">
-            <button class="mode-option selected" type="button" aria-pressed="true" disabled>
+            <button class="mode-option selected" type="button" data-mode="ai" aria-pressed="true">
               <span class="mode-icon ai-icon" aria-hidden="true">✳</span>
               <span class="mode-copy"><strong>TRAINED AI AUTOPLAY</strong><small>The DQN chooses every move automatically</small></span>
               <span class="mode-arrow" aria-hidden="true">●</span>
+            </button>
+            <button class="mode-option" type="button" data-mode="human" aria-pressed="false">
+              <span class="mode-icon local-icon" aria-hidden="true"><i></i><i></i></span>
+              <span class="mode-copy"><strong>PLAY YOURSELF</strong><small>Choose an orb, then choose where it moves</small></span>
+              <span class="mode-arrow" aria-hidden="true">○</span>
             </button>
           </div>
 
@@ -65,21 +70,21 @@
           </div>
 
           <button class="primary-button" id="start-button" type="button" disabled>
-            <span>START AI GAME</span><span class="button-arrow" aria-hidden="true">→</span>
+            <span id="start-button-label">START AI GAME</span><span class="button-arrow" aria-hidden="true">→</span>
           </button>
           <p class="model-note" id="mode-note">Loading the trained model into your browser…</p>
         </section>
 
         <section class="setup-note">
           <span class="note-orb" aria-hidden="true"></span>
-          <p>The DQN selects a piece, finds a clear path, and moves it. Connect five or more same-color orbs to score.</p>
+          <p id="setup-note-text">The DQN selects a piece, finds a clear path, and moves it. Connect five or more same-color orbs to score.</p>
         </section>
       </main>
 
       <main id="game-page" hidden>
         <section class="game-heading">
           <div>
-            <p class="section-kicker">AI AUTOPLAY <span>02 / 02</span></p>
+            <p class="section-kicker"><span id="game-mode-label">AI AUTOPLAY</span> <span>02 / 02</span></p>
             <div class="turn-line"><span class="turn-indicator" id="turn-indicator"></span><h1 id="turn-label">AI is getting ready</h1></div>
           </div>
           <div class="game-actions">
@@ -91,22 +96,22 @@
           </div>
         </section>
 
-        <section class="game-layout" aria-label="AI Five or More game">
+        <section class="game-layout" id="game-layout" aria-label="AI Five or More game">
           <div class="board-column">
             <div class="board-frame">
               <div class="board" id="board" role="grid" aria-label="Nine by nine game board"></div>
             </div>
             <div class="board-footer">
-              <p class="move-guide"><span class="route-sample" aria-hidden="true"><i></i><i></i><i></i></span><strong>HOW TO FOLLOW A MOVE</strong> Watch the selected orb travel one glowing cell at a time to its destination.</p>
+              <p class="move-guide"><span class="route-sample" aria-hidden="true"><i></i><i></i><i></i></span><strong id="move-guide-title">HOW TO FOLLOW A MOVE</strong> <span id="move-guide-text">Watch the selected orb travel one glowing cell at a time to its destination.</span></p>
               <p class="board-note" id="board-note">The AI’s move path will appear here.</p>
             </div>
           </div>
 
           <aside class="control-column">
             <section class="score-panel panel">
-              <div class="score-heading"><span class="section-kicker">AI SCORE</span><span class="live-label" id="game-state-label">READY</span></div>
+              <div class="score-heading"><span class="section-kicker" id="score-heading">AI SCORE</span><span class="live-label" id="game-state-label">READY</span></div>
               <div class="solo-score">
-                <span class="player-name">TRAINED DQN</span>
+                <span class="player-name" id="score-player-name">TRAINED DQN</span>
                 <strong class="player-score" id="ai-score">00</strong>
                 <span class="player-caption">POINTS</span>
               </div>
@@ -118,7 +123,7 @@
             </section>
 
             <section class="summary-panel panel" id="summary-panel" hidden>
-              <div class="summary-title"><span class="how-number">✓</span><div><p class="section-kicker">RUN COMPLETE</p><h2 id="summary-heading">AI game finished</h2></div></div>
+              <div class="summary-title"><span class="how-number">✓</span><div><p class="section-kicker" id="summary-kicker">RUN COMPLETE</p><h2 id="summary-heading">AI game finished</h2></div></div>
               <p class="summary-result" id="summary-result"></p>
               <table class="summary-table">
                 <tbody>
@@ -130,14 +135,14 @@
                   <tr><th scope="row">Colors</th><td id="summary-colors">2</td></tr>
                 </tbody>
               </table>
-              <button class="primary-button" id="play-again-button" type="button"><span>WATCH ANOTHER RUN</span><span class="button-arrow" aria-hidden="true">→</span></button>
+              <button class="primary-button" id="play-again-button" type="button"><span id="play-again-label">WATCH ANOTHER RUN</span><span class="button-arrow" aria-hidden="true">→</span></button>
             </section>
           </aside>
         </section>
       </main>
 
       <footer class="bottom-strip">
-        <span>POWERED BY YOUR TRAINED DQN</span>
+        <span id="footer-mode-label">POWERED BY YOUR TRAINED DQN</span>
         <span class="strip-center"><i></i> NO ACCOUNT · NO SERVER · FREE TO PLAY</span>
         <span>ONE MOVE AT A TIME <b>↗</b></span>
       </footer>

@@ -142,7 +142,7 @@ function createBoard(colorCount) {
 export function createGame({ mode = "ai", difficulty = "Easy", colorCount = 2 } = {}) {
   if (!Object.hasOwn(SPAWN_COUNTS, difficulty)) throw new RangeError("Choose Easy, Medium, or Hard.");
   if (!Number.isInteger(colorCount) || colorCount < 1 || colorCount > 7) throw new RangeError("Color count must be between 1 and 7.");
-  if (mode !== "ai" && mode !== "local") throw new RangeError("Choose AI or two-player mode.");
+  if (mode !== "ai" && mode !== "human" && mode !== "local") throw new RangeError("Choose AI, human, or two-player mode.");
   return {
     board: createBoard(colorCount),
     mode,

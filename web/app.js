@@ -15,6 +15,7 @@ const cellButtons = [];
 
 let dqn = null;
 let game = null;
+let playMode = "ai";
 let difficulty = "Easy";
 let colorCount = 2;
 let busy = false;
@@ -63,10 +64,12 @@ function updateSummary() {
   }
   const failed = Boolean(game.runError);
   panel.hidden = false;
-  document.querySelector("#summary-heading").textContent = failed ? "Run stopped" : "AI game finished";
+  const isHuman = game.mode === "human";
+  document.querySelector("#summary-heading").textContent = failed ? "Run stopped" : isHuman ? "Game finished" : "AI game finished";
   document.querySelector("#summary-result").textContent = failed
     ? game.runError
-    : `No legal moves remain. The trained DQN scored ${game.scores[0]} points in ${game.turnCount} moves.`;
+    : `No legal moves remain. ${isHuman ? "You scored" : "The trained DQN scored"} ${game.scores[0]} points in ${game.turnCount} moves.`;
+  document.querySelector("#summary-kicker").textContent = isHuman ? "GAME OVER" : "RUN COMPLETE";
   document.querySelector("#summary-score").textContent = String(game.scores[0]);
   document.querySelector("#summary-moves").textContent = String(game.turnCount);
   document.querySelector("#summary-lines").textContent = String(game.linesCleared);
@@ -77,6 +80,7 @@ function updateSummary() {
 
 function render() {
   const active = Boolean(game);
+  const isHuman = active && game.mode === "human";
   const displayedPath = moveAnimation?.path ?? (active && game.lastMove ? game.lastMove.path : []);
   const route = new Set(displayedPath);
   const movingCell = moveAnimation ? moveAnimation.path[moveAnimation.step] : null;
@@ -99,9 +103,10 @@ function render() {
     cell.classList.toggle("route-origin", Boolean(moveAnimation ? moveAnimation.source === index : active && game.lastMove?.source === index));
     cell.classList.toggle("route-destination", Boolean(moveAnimation ? moveAnimation.destination === index : active && game.lastMove?.destination === index));
     cell.classList.toggle("move-current", movingCell === index);
+    cell.classList.toggle("selected", Boolean(isHuman && game.selected === index));
     cell.classList.toggle("last-move", Boolean(!moveAnimation && active && game.lastMove && (game.lastMove.source === index || game.lastMove.destination === index)));
     cell.classList.toggle("clearing", Boolean(active && game.lastMove?.cleared.includes(index)));
-    cell.disabled = true;
+    cell.disabled = !isHuman || game.gameOver || busy;
     let routeLabel = "";
     if (moveAnimation?.source === index) routeLabel = ", moving orb source";
     else if (moveAnimation?.destination === index) routeLabel = ", AI move destination";
@@ -109,6 +114,7 @@ function render() {
     else if (route.has(index)) routeLabel = ", glowing move path";
     else if (active && game.lastMove?.source === index) routeLabel = ", move source";
     else if (active && game.lastMove?.destination === index) routeLabel = ", move destination";
+    if (isHuman && game.selected === index) routeLabel += ", selected";
     cell.setAttribute(
       "aria-label",
       `Row ${Math.floor(index / 9) + 1}, column ${(index % 9) + 1}, ${color ? COLORS[color] : "empty"}${routeLabel}`,
@@ -119,13 +125,24 @@ function render() {
   document.querySelector("#move-count").textContent = String(active ? game.turnCount : 0);
   document.querySelector("#line-count").textContent = String(active ? game.linesCleared : 0);
   document.querySelector("#best-line").textContent = active && game.bestLine ? `${game.bestLine} ORBS` : "—";
-  document.querySelector("#game-state-label").textContent = !active ? "READY" : game.gameOver ? "FINISHED" : paused ? "PAUSED" : busy ? "AI THINKING" : "IN PLAY";
-  document.querySelector("#turn-label").textContent = !active ? "AI is getting ready" : game.gameOver ? "AI run complete" : paused ? "Autoplay paused" : moveAnimation ? `Moving ${coordinate(movingCell)}…` : busy ? "DQN is choosing a move…" : "DQN is playing";
+  document.querySelector("#game-state-label").textContent = !active ? "READY" : game.gameOver ? "FINISHED" : paused ? "PAUSED" : busy ? "AI THINKING" : isHuman ? "YOUR TURN" : "IN PLAY";
+  document.querySelector("#turn-label").textContent = !active ? "AI is getting ready" : game.gameOver ? isHuman ? "No moves remain" : "AI run complete" : paused ? "Autoplay paused" : moveAnimation ? `Moving ${coordinate(movingCell)}…` : busy ? "DQN is choosing a move…" : isHuman ? game.selected === null ? "Choose an orb to move" : `Move ${coordinate(game.selected)} to an empty cell` : "DQN is playing";
   document.querySelector("#turn-indicator").classList.toggle("live", Boolean(active && !game.gameOver && !paused && !busy));
   document.querySelector("#turn-indicator").classList.toggle("thinking", Boolean(active && !game.gameOver && !paused && busy));
   document.querySelector("#pause-button").textContent = paused ? "RESUME" : "PAUSE";
-  document.querySelector("#pause-button").disabled = !active || game.gameOver;
-  document.querySelector("#restart-button").disabled = !dqn || busy;
+  document.querySelector("#pause-button").hidden = isHuman;
+  document.querySelector("#pause-button").disabled = !active || isHuman || game.gameOver;
+  document.querySelector("#restart-button").disabled = (!dqn && !isHuman) || busy;
+  document.querySelector("#game-mode-label").textContent = isHuman ? "HUMAN PLAY" : "AI AUTOPLAY";
+  document.querySelector("#game-layout").setAttribute("aria-label", `${isHuman ? "Human" : "AI"} Five or More game`);
+  document.querySelector("#score-heading").textContent = isHuman ? "YOUR SCORE" : "AI SCORE";
+  document.querySelector("#score-player-name").textContent = isHuman ? "YOU" : "TRAINED DQN";
+  document.querySelector("#move-guide-title").textContent = isHuman ? "HOW TO PLAY" : "HOW TO FOLLOW A MOVE";
+  document.querySelector("#move-guide-text").textContent = isHuman
+    ? "Select one of your orbs, then choose an empty cell connected by a clear path."
+    : "Watch the selected orb travel one glowing cell at a time to its destination.";
+  document.querySelector("#footer-mode-label").textContent = isHuman ? "PLAY AT YOUR OWN PACE" : "POWERED BY YOUR TRAINED DQN";
+  document.querySelector("#play-again-label").textContent = isHuman ? "PLAY AGAIN" : "WATCH ANOTHER RUN";
 
   if (moveAnimation) {
     boardNote.textContent = `Moving ${COLORS[moveAnimation.color]} orb ${coordinate(moveAnimation.source)} → ${coordinate(moveAnimation.destination)} · one cell at a time`;
@@ -134,11 +151,41 @@ function render() {
     const to = coordinate(game.lastMove.destination);
     boardNote.textContent = game.lastMove.score
       ? `Line cleared: +${game.lastMove.score} points · ${game.lastMove.lineLength || game.bestLine} connected`
-      : `AI moved ${from} → ${to} · glowing cells show the route`;
+      : `${isHuman ? "You moved" : "AI moved"} ${from} → ${to} · glowing cells show the route`;
+  } else if (isHuman) {
+    boardNote.textContent = game.selected === null ? "Select an orb to make your move." : `Selected ${coordinate(game.selected)} · now choose an empty destination.`;
   } else {
     boardNote.textContent = "The AI’s move path will appear here.";
   }
   updateSummary();
+}
+
+function handleCellClick(index) {
+  if (!game || game.mode !== "human" || game.gameOver || busy) return;
+  const color = game.board[index];
+  if (game.selected === null || color !== 0) {
+    if (color) {
+      game.selected = index;
+      render();
+    } else if (game.selected === null) {
+      showToast("Choose an orb before choosing its destination.");
+    }
+    return;
+  }
+
+  const source = game.selected;
+  const path = findPath(game.board, source, index);
+  if (!path) {
+    showToast("That cell is blocked. Choose an empty cell connected by a clear path.");
+    return;
+  }
+  const result = playMove(game, source, index);
+  if (!result.ok) {
+    showToast(result.reason, true);
+    return;
+  }
+  render();
+  if (result.score) showToast(`You clear a line — +${result.score} points.`);
 }
 
 function stopScheduledMove() {
@@ -303,19 +350,19 @@ function scheduleAIMove(delay = 450) {
 }
 
 function startGame() {
-  if (!dqn) {
+  if (playMode === "ai" && !dqn) {
     showToast("The trained DQN is still loading. Try again in a moment.", true);
     return;
   }
   stopScheduledMove();
   paused = false;
-  game = createGame({ mode: "ai", difficulty, colorCount });
+  game = createGame({ mode: playMode, difficulty, colorCount });
   document.querySelector("#setup-page").hidden = true;
   document.querySelector("#game-page").hidden = false;
   document.querySelector("#setup-link").classList.remove("active");
   render();
   window.scrollTo({ top: 0, behavior: "smooth" });
-  scheduleAIMove(650);
+  if (playMode === "ai") scheduleAIMove(650);
 }
 
 function returnToSetup() {
@@ -356,6 +403,33 @@ function togglePause() {
   }
 }
 
+function updatePlayMode(mode) {
+  playMode = mode;
+  document.querySelectorAll("[data-mode]").forEach((button) => {
+    const selected = button.dataset.mode === mode;
+    button.classList.toggle("selected", selected);
+    button.setAttribute("aria-pressed", String(selected));
+  });
+  document.querySelector("#start-button").disabled = mode === "ai" && !dqn;
+  document.querySelector("#start-button-label").textContent = mode === "human" ? "START HUMAN GAME" : "START AI GAME";
+  document.querySelector("#mode-note").textContent = mode === "human"
+    ? "Select an orb, then an empty reachable cell. Connect five or more matching orbs to score."
+    : dqn
+      ? `Trained ${dqn.meta.runId} · ${Number(dqn.meta.environmentSteps).toLocaleString()} training steps · runs locally in your browser.`
+      : "Loading the trained model into your browser…";
+  document.querySelector("#setup-note-text").textContent = mode === "human"
+    ? "Move an orb along a clear path. Connect five or more same-color orbs to score."
+    : "The DQN selects a piece, finds a clear path, and moves it. Connect five or more same-color orbs to score.";
+}
+
+document.querySelectorAll("[data-mode]").forEach((button) => {
+  button.addEventListener("click", () => updatePlayMode(button.dataset.mode));
+});
+
+cellButtons.forEach((cell, index) => {
+  cell.addEventListener("click", () => handleCellClick(index));
+});
+
 document.querySelectorAll("[data-difficulty]").forEach((button) => {
   button.addEventListener("click", () => {
     difficulty = button.dataset.difficulty;
@@ -382,13 +456,15 @@ loadBrowserDQN().then((model) => {
   dqn = model;
   statusDot.classList.remove("loading", "error");
   modelStatus.textContent = "DQN READY · IN BROWSER";
-  document.querySelector("#start-button").disabled = false;
   document.querySelector("#restart-button").disabled = false;
-  document.querySelector("#mode-note").textContent = `Trained ${model.meta.runId} · ${Number(model.meta.environmentSteps).toLocaleString()} training steps · runs locally in your browser.`;
+  updatePlayMode(playMode);
 }).catch((error) => {
   statusDot.classList.add("error");
   statusDot.classList.remove("loading");
   modelStatus.textContent = "DQN UNAVAILABLE";
-  document.querySelector("#mode-note").textContent = "Model load failed. Refresh the page to retry.";
+  document.querySelector("#mode-note").textContent = playMode === "human"
+    ? "AI is unavailable, but human play is ready."
+    : "Model load failed. Human play remains available.";
+  document.querySelector("#start-button").disabled = playMode === "ai";
   showToast(error.message, true);
 });
